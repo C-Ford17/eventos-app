@@ -1,0 +1,193 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           Int       @id @default(autoincrement())
+  nombre       String
+  email        String    @unique
+  password     String
+  tipo_usuario String    // organizador, asistente, proveedor, staff
+  telefono     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Relaciones
+  eventosCreados       Evento[]             @relation("OrganizadorEventos")
+  reservas             Reserva[]
+  productosServicios   ProductoServicio[]
+  reportes             Reporte[]
+  notificaciones       Notificacion[]
+  auditorias           Auditoria[]
+  
+  @@map("usuarios")
+}
+
+model CategoriaEvento {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  createdAt   DateTime @default(now())
+  
+  eventos Evento[]
+  
+  @@map("categorias_evento")
+}
+
+model Evento {
+  id                  Int      @id @default(autoincrement())
+  nombre              String
+  descripcion         String?
+  fecha               DateTime
+  lugar               String
+  aforo               Int
+  cupos_disponibles   Int
+  estado              String   // activo, cancelado, finalizado, inactivo
+  organizador_id      Int
+  categoria_id        Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  organizador         Usuario              @relation("OrganizadorEventos", fields: [organizador_id], references: [id])
+  categoria           CategoriaEvento      @relation(fields: [categoria_id], references: [id])
+  reservas            Reserva[]
+  productosServicios  EventoProductoServicio[]
+  reportes            Reporte[]
+  
+  @@map("eventos")
+}
+
+model Reserva {
+  id             Int       @id @default(autoincrement())
+  evento_id      Int
+  asistente_id   Int
+  cantidad       Int
+  estado         String    // pendiente, pagada, reembolsada, cancelada
+  fecha_reserva  DateTime  @default(now())
+  metodo_pago    String?
+  monto          Decimal   @db.Decimal(10, 2)
+  
+  evento         Evento    @relation(fields: [evento_id], references: [id])
+  asistente      Usuario   @relation(fields: [asistente_id], references: [id])
+  pagos          Pago[]
+  credenciales   CredencialAcceso[]
+  reembolsos     Reembolso[]
+  
+  @@map("reservas")
+}
+
+model Pago {
+  id                     Int      @id @default(autoincrement())
+  reserva_id             Int
+  metodo                 String
+  monto                  Decimal  @db.Decimal(10, 2)
+  estado                 String   // aprobado, rechazado, pendiente
+  fecha                  DateTime @default(now())
+  referencia_transaccion String?
+  
+  reserva Reserva @relation(fields: [reserva_id], references: [id])
+  
+  @@map("pagos")
+}
+
+model CredencialAcceso {
+  id         Int      @id @default(autoincrement())
+  reserva_id Int
+  codigo_qr  String   @unique
+  estado     String   // vigente, usada, anulada
+  createdAt  DateTime @default(now())
+  
+  reserva Reserva @relation(fields: [reserva_id], references: [id])
+  
+  @@map("credenciales_acceso")
+}
+
+model ProductoServicio {
+  id            Int      @id @default(autoincrement())
+  proveedor_id  Int
+  nombre        String
+  descripcion   String?
+  precio        Decimal  @db.Decimal(10, 2)
+  estado        String   // activo, inactivo, eliminado
+  evidencia_url String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  proveedor Usuario                    @relation(fields: [proveedor_id], references: [id])
+  eventos   EventoProductoServicio[]
+  
+  @@map("productos_servicios")
+}
+
+model EventoProductoServicio {
+  id                   Int     @id @default(autoincrement())
+  evento_id            Int
+  producto_servicio_id Int
+  condiciones          String?
+  
+  evento           Evento           @relation(fields: [evento_id], references: [id])
+  productoServicio ProductoServicio @relation(fields: [producto_servicio_id], references: [id])
+  
+  @@map("eventos_productos_servicios")
+}
+
+model Reembolso {
+  id              Int      @id @default(autoincrement())
+  reserva_id      Int
+  fecha_solicitud DateTime @default(now())
+  estado          String   // pendiente, aprobado, rechazado
+  monto           Decimal  @db.Decimal(10, 2)
+  motivo          String?
+  
+  reserva Reserva @relation(fields: [reserva_id], references: [id])
+  
+  @@map("reembolsos")
+}
+
+model Reporte {
+  id               Int      @id @default(autoincrement())
+  evento_id        Int
+  organizador_id   Int
+  ruta_pdf         String
+  fecha_generacion DateTime @default(now())
+  compartido       Boolean  @default(false)
+  destinatarios    String?
+  
+  evento      Evento  @relation(fields: [evento_id], references: [id])
+  organizador Usuario @relation(fields: [organizador_id], references: [id])
+  
+  @@map("reportes")
+}
+
+model Notificacion {
+  id          Int      @id @default(autoincrement())
+  usuario_id  Int
+  tipo        String   // cancelacion, reembolso, recordatorio
+  mensaje     String
+  fecha_envio DateTime @default(now())
+  estado      String   // enviada, pendiente, error
+  
+  usuario Usuario @relation(fields: [usuario_id], references: [id])
+  
+  @@map("notificaciones")
+}
+
+model Auditoria {
+  id               Int      @id @default(autoincrement())
+  usuario_id       Int
+  accion           String
+  entidad_afectada String
+  id_entidad       Int
+  fecha            DateTime @default(now())
+  descripcion      String?
+  
+  usuario Usuario @relation(fields: [usuario_id], references: [id])
+  
+  @@map("auditorias")
+}
