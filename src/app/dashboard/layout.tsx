@@ -1,13 +1,15 @@
 // src/app/dashboard/layout.tsx
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
-      <nav className="w-full md:w-64 bg-gray-100 p-4">
-        {/* Aquí puedes poner navegación lateral, logo, o menú según tus mockups */}
-        <p className="font-bold">Panel principal</p>
-        {/* Enlaces de navegación, se pueden personalizar por rol */}
+    <div className="flex h-screen flex-col md:flex-row">
+      <nav className="w-full md:w-60 bg-gray-800 text-white flex flex-col p-4">
+        <p className="text-lg mb-4 font-bold">Mi Panel</p>
+        <a href="/dashboard/organizador" className="mb-2 hover:underline">Organizador</a>
+        <a href="/dashboard/proveedor" className="mb-2 hover:underline">Proveedor</a>
+        <a href="/dashboard/asistente" className="mb-2 hover:underline">Asistente</a>
+        {/* Puedes hacer que los enlaces estén condicionados al rol aquí */}
       </nav>
-      <main className="grow p-6 md:overflow-y-auto md:p-12">{children}</main>
+      <main className="flex-1 p-6 overflow-y-auto">{children}</main>
     </div>
   );
 }
