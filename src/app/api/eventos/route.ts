@@ -1,10 +1,21 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const eventos = await prisma.evento.findMany();
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get('q') || '';
+  const eventos = await prisma.evento.findMany({
+    where: {
+      nombre: {
+        contains: q,
+        mode: 'insensitive',
+      },
+    },
+  });
   return NextResponse.json(eventos);
 }
+
+
 
 export async function POST(req: Request) {
   const body = await req.json();
