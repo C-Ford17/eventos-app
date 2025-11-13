@@ -29,6 +29,26 @@ const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" as SessionStrategy },
   secret: process.env.AUTH_SECRET,
+  callbacks: {
+    async jwt({ token, user }) {
+      // SOLO en el primer login, 'user' tiene valor
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.tipo_usuario = user.tipo_usuario;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Transfiere los campos del token a session.user
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.tipo_usuario = token.tipo_usuario as string;
+        // Agrega otros campos si lo necesitas
+      }
+      return session;
+    },
+  },
 };
 
 export default authOptions;
