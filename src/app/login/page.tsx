@@ -1,26 +1,48 @@
-// src/app/login/page.tsx
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Aquí va tu lógica de autenticación, por ejemplo:
+    setError('');
+    setLoading(true);
+    
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      if (!res.ok) throw new Error('Credenciales incorrectas.');
-      // Redirección al dashboard, por ejemplo
-      window.location.href = '/dashboard';
+      
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        setLoading(false);
+        
+        if (res.ok) {
+          // Login exitoso - redirige al dashboard
+          router.push('/dashboard');
+        } else {
+          setError(data.error || 'Error al iniciar sesión');
+        }
+      } else {
+        const text = await res.text();
+        console.error('Respuesta no-JSON:', text);
+        setError('Error del servidor');
+        setLoading(false);
+      }
+      
     } catch (err: any) {
-      setError(err.message);
+      setLoading(false);
+      setError('Error de conexión');
+      console.error('Error:', err);
     }
   }
 
@@ -45,7 +67,13 @@ export default function LoginPage() {
           required
         />
         {error && <div className="text-red-400 text-sm">{error}</div>}
-        <button type="submit" className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold">Entrar</button>
+        <button 
+          type="submit" 
+          disabled={loading}
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold disabled:opacity-50"
+        >
+          {loading ? 'Iniciando sesión...' : 'Entrar'}
+        </button>
       </form>
       <p className="mt-4 text-sm text-neutral-300">
         ¿No tienes cuenta? <a href="/register" className="text-blue-400 hover:underline">Regístrate</a>
