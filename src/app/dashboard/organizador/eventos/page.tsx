@@ -10,28 +10,26 @@ export default function MisEventosPage() {
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState('todos');
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    if (!user.id) return;
+  // src/app/dashboard/organizador/eventos/page.tsx
+useEffect(() => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  if (!user.id) return;
 
-    setLoading(true);
-    
-    // Obtener eventos del organizador
-    fetch(`/api/eventos`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          // Filtrar solo los eventos del organizador actual
-          const misEventos = data.eventos.filter(
-            (e: any) => e.organizador_id === user.id
-          );
-          setEventos(misEventos);
-        }
-      })
-      .catch(err => console.error('Error cargando eventos:', err))
-      .finally(() => setLoading(false));
-  }, []);
+  setLoading(true);
+  
+  // Llamar al endpoint específico para mis eventos
+  fetch(`/api/eventos/mis-eventos?organizador_id=${user.id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        setEventos(data.eventos);
+      }
+    })
+    .catch(err => console.error('Error:', err))
+    .finally(() => setLoading(false));
+}, []);
+
 
   const handleCancelarEvento = async (eventoId: string) => {
     if (!window.confirm('¿Estás seguro de cancelar este evento? Se procesarán reembolsos automáticamente.')) {

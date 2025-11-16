@@ -58,6 +58,19 @@ export default function CrearEventoPage() {
       }
 
       alert('Evento creado exitosamente');
+      for (const tipo of tiposEntrada) {
+        if (tipo.nombre && tipo.precio) {
+          await fetch('/api/tipos-entrada', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              evento_id: result.evento.id,
+              nombre: tipo.nombre,
+              precio: parseFloat(tipo.precio),
+            }),
+          });
+        }
+      }
       router.push('/dashboard/organizador/eventos');
     } catch (error: any) {
       console.error('Error:', error);
@@ -65,6 +78,14 @@ export default function CrearEventoPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const [tiposEntrada, setTiposEntrada] = useState([
+    { nombre: 'General', precio: '' },
+  ]);
+
+  const agregarTipoEntrada = () => {
+    setTiposEntrada([...tiposEntrada, { nombre: '', precio: '' }]);
   };
 
   return (
@@ -177,6 +198,44 @@ export default function CrearEventoPage() {
               placeholder="Ej: 200"
             />
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Tipos de Entrada
+          </label>
+          {tiposEntrada.map((tipo, index) => (
+            <div key={index} className="grid grid-cols-2 gap-4 mb-3">
+              <input
+                type="text"
+                value={tipo.nombre}
+                onChange={(e) => {
+                  const nuevos = [...tiposEntrada];
+                  nuevos[index].nombre = e.target.value;
+                  setTiposEntrada(nuevos);
+                }}
+                placeholder="Ej: VIP"
+                className="px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700"
+              />
+              <input
+                type="number"
+                value={tipo.precio}
+                onChange={(e) => {
+                  const nuevos = [...tiposEntrada];
+                  nuevos[index].precio = e.target.value;
+                  setTiposEntrada(nuevos);
+                }}
+                placeholder="Precio"
+                className="px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700"
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={agregarTipoEntrada}
+            className="text-blue-400 hover:text-blue-300 text-sm"
+          >
+            + Agregar tipo de entrada
+          </button>
         </div>
 
         <div className="flex space-x-4">

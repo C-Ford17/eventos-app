@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 // GET - Obtener servicio específico
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const servicio = await prisma.productoServicio.findUnique({
       where: { id },
@@ -59,10 +59,10 @@ export async function GET(
 // PUT - Actualizar servicio
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await req.json();
     const {
       nombre,
@@ -121,10 +121,10 @@ export async function PUT(
 // DELETE - Eliminar servicio
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const { searchParams } = new URL(req.url);
     const proveedor_id = searchParams.get('proveedor_id');
 

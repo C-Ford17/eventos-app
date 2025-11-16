@@ -20,16 +20,26 @@ export default function DetalleEventoPage() {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/eventos/${eventoId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setEvento(data.evento);
-        }
-      })
-      .catch(err => console.error('Error cargando evento:', err))
-      .finally(() => setLoading(false));
-  }, [eventoId]);
+  console.log('🔍 Evento ID:', eventoId); // ← Debug
+  console.log('🔗 URL:', `/api/eventos/${eventoId}`); // ← Debug
+  
+  fetch(`/api/eventos/${eventoId}`)
+    .then(res => {
+      console.log('📡 Response status:', res.status); // ← Debug
+      return res.json();
+    })
+    .then(data => {
+      console.log('📥 Response data:', data); // ← Debug
+      if (data.success) {
+        console.log('✅ Evento encontrado:', data.evento); // ← Debug
+        setEvento(data.evento);
+      } else {
+        console.error('❌ Error del API:', data.error); // ← Debug
+      }
+    })
+    .catch(err => console.error('❌ Error de red:', err))
+    .finally(() => setLoading(false));
+}, [eventoId]);
 
   const handleComprar = () => {
     if (!user) {

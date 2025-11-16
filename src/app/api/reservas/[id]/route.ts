@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 // GET - Obtener detalles de una reserva
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ← CAMBIO
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // ← CAMBIO: await
 
     const reserva = await prisma.reserva.findUnique({
       where: { id },
@@ -74,10 +74,10 @@ export async function GET(
 // PUT - Actualizar estado de reserva
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ← CAMBIO
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // ← CAMBIO: await
     const body = await req.json();
     const { estado_reserva, usuario_id } = body;
 
