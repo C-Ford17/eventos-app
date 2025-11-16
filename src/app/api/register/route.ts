@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     }
 
     // Valida que el tipo de usuario sea válido
-    const tiposValidos = ['asistente', 'organizador', 'proveedor'];
+    const tiposValidos = ['asistente', 'organizador', 'proveedor', 'staff'];
     const tipoFinal = tiposValidos.includes(tipo_usuario) ? tipo_usuario : 'asistente';
 
     const existingUser = await prisma.usuario.findUnique({

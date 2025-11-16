@@ -40,6 +40,10 @@ export default function DashboardPage() {
           console.log('Redirigiendo a asistente'); // Debug
           router.push('/dashboard/asistente');
           break;
+        case 'staff':
+          console.log('Redirigiendo a asistente'); // Debug
+          router.push('/dashboard/staff');
+          break;
         default:
           console.error('Tipo de usuario desconocido:', tipoUsuario);
           router.push('/login');

@@ -50,6 +50,13 @@ export default function DashboardLayout({
           { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes' },
           { label: 'Historial', href: '/dashboard/proveedor/historial' },
         ];
+      case 'staff':  // NUEVO
+        return [
+          ...commonOptions,
+          { label: 'Escanear Entradas', href: '/dashboard/staff/escanear' },
+          { label: 'Lista de Asistentes', href: '/dashboard/staff/asistentes' },
+          { label: 'Reportes', href: '/dashboard/staff/reportes' },
+        ];
       default:
         return commonOptions;
     }

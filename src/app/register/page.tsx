@@ -124,6 +124,7 @@ export default function RegisterPage() {
               <option value="asistente">Asistente - Comprar boletos y asistir a eventos</option>
               <option value="organizador">Organizador - Crear y gestionar eventos</option>
               <option value="proveedor">Proveedor - Ofrecer servicios para eventos</option>
+              <option value="staff">Staff - Validar entradas en eventos</option>
             </select>
           </div>
 
