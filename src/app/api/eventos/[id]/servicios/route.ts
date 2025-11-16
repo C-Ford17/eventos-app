@@ -64,10 +64,10 @@ export async function GET(
 // POST - Solicitar servicio para un evento
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: evento_id } = params;
+    const { id: evento_id } = await context.params;
     const body = await req.json();
     const {
       producto_servicio_id,
