@@ -35,56 +35,53 @@ export default function EscanearEntradasPage() {
   };
 
   const validarQR = async (qrData: string) => {
-    setValidando(true);
-    try {
-      const response = await fetch('/api/validar-qr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrData }),
-      });
+  setValidando(true);
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    const response = await fetch('/api/validar-qr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        qrData,
+        staff_id: user.id // Envía el ID del staff para auditoría
+      }),
+    });
 
-      const result = await response.json();
+    const result = await response.json();
 
-      if (response.ok && result.success) {
-        // Validación exitosa
-        const nuevaActividad: ActividadReciente = {
-          nombre: 'Entrada validada',
-          hora: new Date().toLocaleTimeString('es-ES'),
-          estado: 'exitoso',
-          codigo: result.data.reservaId,
-          mensaje: result.message,
-        };
-        setActividadReciente([nuevaActividad, ...actividadReciente]);
-        
-        // Reproduce sonido de éxito (opcional)
-        playSuccessSound();
-        
-        // Muestra notificación visual
-        showNotification('✓ Entrada validada correctamente', 'success');
-      } else {
-        // Error de validación
-        const nuevaActividad: ActividadReciente = {
-          nombre: result.tipo === 'duplicado' ? 'Entrada Duplicada' : 'Código Inválido',
-          hora: new Date().toLocaleTimeString('es-ES'),
-          estado: 'error',
-          codigo: 'N/A',
-          mensaje: result.error,
-        };
-        setActividadReciente([nuevaActividad, ...actividadReciente]);
-        
-        // Reproduce sonido de error
-        playErrorSound();
-        
-        // Muestra notificación de error
-        showNotification(`✗ ${result.error}`, 'error');
-      }
-    } catch (error) {
-      console.error('Error validando QR:', error);
-      showNotification('Error de conexión', 'error');
-    } finally {
-      setValidando(false);
+    if (response.ok && result.success) {
+      // Validación exitosa
+      const nuevaActividad: ActividadReciente = {
+        nombre: result.data.asistente || 'Entrada validada',
+        hora: new Date().toLocaleTimeString('es-ES'),
+        estado: 'exitoso',
+        codigo: result.data.reservaId,
+        mensaje: result.message,
+      };
+      setActividadReciente([nuevaActividad, ...actividadReciente]);
+      
+      showNotification(`✓ ${result.message}`, 'success');
+    } else {
+      // Error de validación
+      const nuevaActividad: ActividadReciente = {
+        nombre: result.tipo === 'duplicado' ? 'Entrada Duplicada' : 'Código Inválido',
+        hora: new Date().toLocaleTimeString('es-ES'),
+        estado: 'error',
+        codigo: 'N/A',
+        mensaje: result.error,
+      };
+      setActividadReciente([nuevaActividad, ...actividadReciente]);
+      
+      showNotification(`✗ ${result.error}`, 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error validando QR:', error);
+    showNotification('Error de conexión', 'error');
+  } finally {
+    setValidando(false);
+  }
+};
 
   const handleScanSuccess = (decodedText: string) => {
     if (!validando) {
