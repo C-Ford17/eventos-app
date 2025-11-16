@@ -1,39 +1,171 @@
-import { prisma } from '@/lib/prisma';
+// src/app/api/eventos/route.ts
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const q = searchParams.get('q') || '';
-  const eventos = await prisma.evento.findMany({
-    where: {
-      nombre: {
-        contains: q,
-        mode: 'insensitive',
+const prisma = new PrismaClient();
+
+// GET - Listar todos los eventos (para página de exploración)
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const categoria = searchParams.get('categoria');
+    const estado = searchParams.get('estado') || 'programado';
+
+    const eventos = await prisma.evento.findMany({
+      where: {
+        ...(categoria && { categoria_id: categoria }),
+        estado,
+        fecha_inicio: {
+          gte: new Date(), // Solo eventos futuros
+        },
       },
-    },
-  });
-  return NextResponse.json(eventos);
+      include: {
+        categoria: true,
+        organizador: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+          },
+        },
+        reservas: {
+          select: {
+            cantidad_boletos: true,
+          },
+        },
+      },
+      orderBy: {
+        fecha_inicio: 'asc',
+      },
+    });
+
+    // Calcula estadísticas para cada evento
+    const eventosConStats = eventos.map((evento) => {
+      const totalReservas = evento.reservas.reduce(
+        (sum, reserva) => sum + reserva.cantidad_boletos,
+        0
+      );
+
+      return {
+        id: evento.id,
+        nombre: evento.nombre,
+        descripcion: evento.descripcion,
+        fecha_inicio: evento.fecha_inicio,
+        fecha_fin: evento.fecha_fin,
+        ubicacion: evento.ubicacion,
+        aforo_max: evento.aforo_max,
+        categoria: evento.categoria.nombre,
+        organizador: evento.organizador.nombre,
+        estado: evento.estado,
+        reservas: totalReservas,
+        disponibilidad: evento.aforo_max - totalReservas,
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      eventos: eventosConStats,
+    });
+  } catch (error: any) {
+    console.error('Error obteniendo eventos:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener eventos' },
+      { status: 500 }
+    );
+  }
 }
 
-
-
+// POST - Crear nuevo evento
 export async function POST(req: Request) {
-  const body = await req.json();
-  const evento = await prisma.evento.create({ data: body });
-  return NextResponse.json(evento);
-}
+  try {
+    const body = await req.json();
+    const {
+      nombre,
+      descripcion,
+      fecha_inicio,
+      fecha_fin,
+      ubicacion,
+      aforo_max,
+      categoria_id,
+      organizador_id,
+    } = body;
 
-export async function PUT(req: Request) {
-  const body = await req.json();
-  const { id, ...data } = body;
-  // id: el identificador del evento a editar
-  const evento = await prisma.evento.update({ where: { id }, data });
-  return NextResponse.json(evento);
-}
+    // Validaciones
+    if (!nombre || !descripcion || !fecha_inicio || !ubicacion || !aforo_max || !organizador_id) {
+      return NextResponse.json(
+        { error: 'Todos los campos son requeridos' },
+        { status: 400 }
+      );
+    }
 
-export async function DELETE(req: Request) {
-  const body = await req.json();
-  const { id } = body;
-  await prisma.evento.delete({ where: { id }});
-  return NextResponse.json({ ok: true });
+    // Verifica que el organizador existe y es tipo organizador
+    const organizador = await prisma.usuario.findUnique({
+      where: { id: organizador_id },
+    });
+
+    if (!organizador || organizador.tipo_usuario !== 'organizador') {
+      return NextResponse.json(
+        { error: 'Usuario no válido o no es organizador' },
+        { status: 403 }
+      );
+    }
+
+    // Si no hay categoria_id, busca o crea una categoría por defecto
+    let categoriaFinal = categoria_id;
+    if (!categoriaFinal) {
+      let categoriaDefault = await prisma.categoriaEvento.findUnique({
+        where: { nombre: 'General' },
+      });
+
+      if (!categoriaDefault) {
+        categoriaDefault = await prisma.categoriaEvento.create({
+          data: {
+            nombre: 'General',
+            descripcion: 'Categoría general para eventos',
+          },
+        });
+      }
+      categoriaFinal = categoriaDefault.id;
+    }
+
+    // Crea el evento
+    const evento = await prisma.evento.create({
+      data: {
+        nombre,
+        descripcion,
+        fecha_inicio: new Date(fecha_inicio),
+        fecha_fin: fecha_fin ? new Date(fecha_fin) : new Date(fecha_inicio),
+        ubicacion,
+        aforo_max: parseInt(aforo_max),
+        categoria_id: categoriaFinal,
+        organizador_id,
+        estado: 'programado',
+      },
+      include: {
+        categoria: true,
+        organizador: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Evento creado exitosamente',
+        evento,
+      },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error('Error creando evento:', error);
+    return NextResponse.json(
+      { error: 'Error al crear evento', details: error.message },
+      { status: 500 }
+    );
+  }
 }
