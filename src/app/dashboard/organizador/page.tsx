@@ -1,24 +1,77 @@
 // src/app/dashboard/organizador/page.tsx
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function OrganizadorPanel() {
-  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalEventos: 0,
+    eventosActivos: 0,
+    totalAsistentes: 0,
+    ingresosTotales: 0,
+    reservasTotales: 0,
+    ingresosMes: 0,
+  });
+  const [proximosEventos, setProximosEventos] = useState<any[]>([]);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      setUser(JSON.parse(userStr));
-    }
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!user.id) return;
+
+    // Cargar eventos del organizador
+    fetch(`/api/eventos`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const misEventos = data.eventos.filter(
+            (e: any) => e.organizador_id === user.id
+          );
+          
+          // Calcular estadísticas
+          const activos = misEventos.filter((e: any) => e.estado === 'programado').length;
+          const totalReservas = misEventos.reduce(
+            (sum: number, e: any) => sum + (e.reservas || 0), 
+            0
+          );
+          const totalIngresos = misEventos.reduce(
+            (sum: number, e: any) => sum + (e.reservas || 0) * 50000, // Aproximado
+            0
+          );
+
+          setStats({
+            totalEventos: misEventos.length,
+            eventosActivos: activos,
+            totalAsistentes: totalReservas,
+            ingresosTotales: totalIngresos,
+            reservasTotales: totalReservas,
+            ingresosMes: totalIngresos,
+          });
+
+          // Próximos eventos
+          const proximos = misEventos
+            .filter((e: any) => new Date(e.fecha_inicio) > new Date())
+            .sort((a: any, b: any) => 
+              new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime()
+            )
+            .slice(0, 5);
+          
+          setProximosEventos(proximos);
+        }
+      })
+      .catch(err => console.error('Error:', err))
+      .finally(() => setLoading(false));
   }, []);
 
-  const stats = {
-    eventosActivos: 5,
-    reservasTotales: 234,
-    ingresosMes: 15600000,
-    proximosEventos: 3,
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -97,27 +150,41 @@ export default function OrganizadorPanel() {
       {/* Mis eventos recientes */}
       <section className="bg-neutral-800 p-6 rounded-lg">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-white">Mis Eventos</h2>
+          <h2 className="text-xl font-semibold text-white">Próximos Eventos</h2>
           <Link href="/dashboard/organizador/eventos" className="text-blue-400 hover:text-blue-300 text-sm">
             Ver todos →
           </Link>
         </div>
-        <div className="space-y-3">
-          {[
-            { nombre: 'Tech Summit 2024', fecha: '2024-11-01', reservas: 150, estado: 'Activo' },
-            { nombre: 'Festival de Música', fecha: '2024-11-15', reservas: 84, estado: 'Activo' },
-          ].map((evento, i) => (
-            <div key={i} className="bg-neutral-900 p-4 rounded flex justify-between items-center">
-              <div>
-                <p className="text-white font-medium">{evento.nombre}</p>
-                <p className="text-gray-400 text-sm">{evento.fecha} • {evento.reservas} reservas</p>
+        
+        {proximosEventos.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <p>No tienes eventos próximos</p>
+            <Link 
+              href="/dashboard/organizador/crear"
+              className="text-blue-400 hover:text-blue-300 mt-2 inline-block"
+            >
+              Crear tu primer evento
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {proximosEventos.map((evento) => (
+              <div key={evento.id} className="bg-neutral-900 p-4 rounded flex justify-between items-center">
+                <div>
+                  <p className="text-white font-medium">{evento.nombre}</p>
+                  <p className="text-gray-400 text-sm">
+                    {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')} • {evento.reservas || 0} reservas
+                  </p>
+                </div>
+                <span className={`px-3 py-1 text-white text-xs rounded-full ${
+                  evento.estado === 'programado' ? 'bg-green-600' : 'bg-gray-600'
+                }`}>
+                  {evento.estado}
+                </span>
               </div>
-              <span className="px-3 py-1 bg-green-600 text-white text-xs rounded-full">
-                {evento.estado}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
