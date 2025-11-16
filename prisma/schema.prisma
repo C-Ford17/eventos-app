@@ -1,0 +1,232 @@
+// prisma/schema.prisma - SCHEMA COMPLETO
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// USUARIOS
+model Usuario {
+  id           String   @id @default(uuid())
+  nombre       String
+  email        String   @unique
+  password     String
+  tipo_usuario String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  telefono     String?  // ✅ AGREGAR ESTA LÍNEA (opcional)
+  eventosCreados     Evento[]           @relation("OrganizadorEventos")
+  reservas           Reserva[]          @relation("AsistenteReservas")
+  productosServicios ProductoServicio[] @relation("ProveedorServicios")
+  reportes           Reporte[]
+  auditorias         Auditoria[]
+  notificaciones     Notificacion[]
+
+  @@map("usuarios")
+}
+
+// CATEGORÍAS
+model CategoriaEvento {
+  id          String   @id @default(uuid())
+  nombre      String   @unique
+  descripcion String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  eventos Evento[]
+
+  @@map("categorias_evento")
+}
+
+// EVENTOS
+model Evento {
+  id             String   @id @default(uuid())
+  nombre         String
+  descripcion    String   @db.Text
+  fecha_inicio   DateTime
+  fecha_fin      DateTime
+  ubicacion      String
+  aforo_max      Int
+  categoria_id   String
+  organizador_id String
+  estado         String   @default("programado")
+  imagen_url     String?  // <--- AGREGA ESTA LÍNEA
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  categoria                CategoriaEvento          @relation(fields: [categoria_id], references: [id])
+  organizador              Usuario                  @relation("OrganizadorEventos", fields: [organizador_id], references: [id])
+  reservas                 Reserva[]
+  tiposEntrada             TipoEntrada[] // ← AGREGA ESTA LÍNEA
+  productosServiciosEvento EventoProductoServicio[]
+  reportes                 Reporte[]
+
+  @@map("eventos")
+}
+
+// RESERVAS
+model Reserva {
+  id               String   @id @default(uuid())
+  evento_id        String
+  asistente_id     String
+  tipo_entrada_id  String? // ← AGREGA ESTA LÍNEA (si no estaba)
+  cantidad_boletos Int
+  precio_total     Decimal  @db.Decimal(10, 2)
+  metodo_pago      String
+  estado_reserva   String   @default("confirmada")
+  fecha_reserva    DateTime @default(now())
+  qr_data          String?  @db.Text
+  qr_hash          String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  evento             Evento             @relation(fields: [evento_id], references: [id])
+  tipoEntrada        TipoEntrada?       @relation(fields: [tipo_entrada_id], references: [id]) // ← AGREGA ESTA LÍNEA
+  asistente          Usuario            @relation("AsistenteReservas", fields: [asistente_id], references: [id])
+  credencialesAcceso CredencialAcceso[]
+  pagos              Pago[]
+  reembolsos         Reembolso[]
+
+  @@map("reservas")
+}
+
+// CREDENCIALES DE ACCESO (QR)
+model CredencialAcceso {
+  id                String    @id @default(uuid())
+  reserva_id        String
+  codigo_qr         String    @unique
+  estado_validacion String    @default("pendiente")
+  fecha_validacion  DateTime?
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  reserva Reserva @relation(fields: [reserva_id], references: [id])
+
+  @@map("credenciales_acceso")
+}
+
+// PAGOS
+model Pago {
+  id                 String   @id @default(uuid())
+  reserva_id         String
+  monto              Decimal  @db.Decimal(10, 2)
+  metodo_pago        String
+  estado_transaccion String   @default("pendiente")
+  referencia_externa String?
+  fecha_pago         DateTime @default(now())
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  reserva Reserva @relation(fields: [reserva_id], references: [id])
+
+  @@map("pagos")
+}
+
+// REEMBOLSOS
+model Reembolso {
+  id               String    @id @default(uuid())
+  reserva_id       String
+  monto_reembolso  Decimal   @db.Decimal(10, 2)
+  motivo           String?   @db.Text
+  estado_reembolso String    @default("solicitado")
+  fecha_solicitud  DateTime  @default(now())
+  fecha_procesado  DateTime?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  
+  reserva Reserva @relation(fields: [reserva_id], references: [id])
+
+  @@map("reembolsos")
+}
+
+// PRODUCTOS Y SERVICIOS (Proveedores)
+model ProductoServicio {
+  id             String   @id @default(uuid())
+  proveedor_id   String
+  nombre         String
+  descripcion    String   @db.Text
+  categoria      String
+  precio_base    Decimal  @db.Decimal(10, 2)
+  disponibilidad Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  proveedor Usuario                  @relation("ProveedorServicios", fields: [proveedor_id], references: [id])
+  eventos   EventoProductoServicio[]
+
+  @@map("productos_servicios")
+}
+
+// RELACIÓN EVENTOS - PRODUCTOS/SERVICIOS
+model EventoProductoServicio {
+  id                   String   @id @default(uuid())
+  evento_id            String
+  producto_servicio_id String
+  cantidad             Int      @default(1)
+  precio_acordado      Decimal  @db.Decimal(10, 2)
+  estado_contratacion  String   @default("pendiente")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  evento           Evento           @relation(fields: [evento_id], references: [id])
+  productoServicio ProductoServicio @relation(fields: [producto_servicio_id], references: [id])
+
+  @@map("eventos_productos_servicios")
+}
+
+// NOTIFICACIONES
+model Notificacion {
+  id         String   @id @default(uuid())
+  usuario_id String
+  tipo       String
+  mensaje    String   @db.Text
+  leida      Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuario_id], references: [id])
+
+  @@map("notificaciones")
+}
+
+// REPORTES
+model Reporte {
+  id               String   @id @default(uuid())
+  evento_id        String
+  organizador_id   String
+  tipo_reporte     String
+  contenido        String   @db.Text
+  fecha_generacion DateTime @default(now())
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  evento      Evento  @relation(fields: [evento_id], references: [id])
+  organizador Usuario @relation(fields: [organizador_id], references: [id])
+
+  @@map("reportes")
+}
+
+// AUDITORÍAS
+model Auditoria {
+  id          String   @id @default(uuid())
+  usuario_id  String
+  accion      String
+  tabla       String
+  registro_id String?
+  detalles    String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuario_id], references: [id])
+
+  @@map("auditorias")
+}
+
+model TipoEntrada {
+  id         String   @id @default(uuid())
+  evento_id  String
+  nombre     String
+  precio     Decimal  @db.Decimal(10, 2)
+  disponible Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  evento   Evento    @relation(fields: [evento_id], references: [id], onDelete: Cascade)
+  reservas Reserva[]
+
+  @@map("tipos_entrada")
+}
