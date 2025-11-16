@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { descargarQRImagen } from '@/lib/qr';
+import { generarPDFBoleto } from '@/lib/pdf-boleto';
 
 export default function ExitoCompraPage() {
   const params = useParams();
@@ -19,12 +21,58 @@ export default function ExitoCompraPage() {
     setCompra(JSON.parse(compraStr));
   }, [eventoId, router]);
 
-  const handleDescargarBoleto = () => {
-    alert('Descargando boleto... (funcionalidad pendiente)');
+  const handleDescargarImagen = () => {
+    if (compra?.qrDataURL) {
+      descargarQRImagen(compra.qrDataURL, `boleto-${compra.reservaId}.png`);
+    }
+  };
+
+  const handleDescargarPDF = () => {
+    if (compra) {
+      generarPDFBoleto({
+        evento: compra.evento,
+        entradas: compra.entradas,
+        numeroOrden: compra.numeroOrden,
+        reservaId: compra.reservaId,
+        fechaCompra: compra.fechaCompra,
+        total: compra.total,
+        qrDataURL: compra.qrDataURL,
+        metodoPago: compra.metodoPago,
+      });
+    }
   };
 
   const handleAgregarCalendario = () => {
-    alert('Agregando al calendario... (funcionalidad pendiente)');
+    // Genera un archivo .ics para agregar al calendario
+    if (!compra) return;
+
+    const evento = compra.evento;
+    const fechaInicio = new Date(evento.fecha).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const fechaFin = new Date(new Date(evento.fecha).getTime() + 2 * 60 * 60 * 1000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      `DTSTART:${fechaInicio}`,
+      `DTEND:${fechaFin}`,
+      `SUMMARY:${evento.nombre}`,
+      `DESCRIPTION:Evento confirmado - Boleto: ${compra.reservaId}`,
+      `LOCATION:${evento.lugar}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `evento-${compra.reservaId}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (!compra) {
@@ -115,32 +163,50 @@ export default function ExitoCompraPage() {
               Escanea este código en el acceso.
             </p>
 
-            {/* QR Code placeholder */}
+            {/* QR Code REAL */}
             <div className="bg-white p-6 rounded-lg flex items-center justify-center mb-4">
               <div className="text-center">
-                <div className="w-48 h-48 bg-gray-200 mx-auto mb-3 flex items-center justify-center rounded">
-                  <div className="text-center">
-                    <svg className="w-32 h-32 text-gray-400 mx-auto" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
-                    </svg>
-                    <p className="text-gray-500 text-xs mt-2">QR Code</p>
+                {compra.qrDataURL ? (
+                  <>
+                    <img
+                      src={compra.qrDataURL}
+                      alt="Código QR"
+                      className="w-48 h-48 mx-auto mb-3"
+                    />
+                    <p className="text-gray-800 font-mono text-xs break-all px-4">
+                      {compra.reservaId}
+                    </p>
+                  </>
+                ) : (
+                  <div className="w-48 h-48 bg-gray-200 flex items-center justify-center">
+                    <p className="text-gray-500 text-sm">Error al cargar QR</p>
                   </div>
-                </div>
-                <p className="text-gray-800 font-mono text-sm">
-                  {compra.codigoQR}
-                </p>
+                )}
               </div>
             </div>
 
-            <button
-              onClick={handleDescargarBoleto}
-              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold mb-3 transition flex items-center justify-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Descargar
-            </button>
+            {/* Botones de descarga */}
+            <div className="space-y-3">
+              <button
+                onClick={handleDescargarPDF}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition flex items-center justify-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Descargar Boleto PDF
+              </button>
+
+              <button
+                onClick={handleDescargarImagen}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Descargar Solo QR
+              </button>
+            </div>
           </div>
         </div>
 

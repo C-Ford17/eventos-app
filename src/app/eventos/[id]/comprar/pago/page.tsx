@@ -27,25 +27,51 @@ export default function PagoPage() {
   }, [eventoId, router]);
 
   const handlePagar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProcesando(true);
+  e.preventDefault();
+  setProcesando(true);
 
+  try {
     // Simula procesamiento de pago
-    setTimeout(() => {
-      // Guarda información de la compra completada
-      const compraFinalizada = {
-        ...compra,
-        numeroOrden: Math.floor(Math.random() * 1000000),
-        fechaCompra: new Date().toISOString(),
-        metodoPago: metodoPago === 'tarjeta' ? `Tarjeta terminada en ${numeroTarjeta.slice(-4)}` : metodoPago.toUpperCase(),
-        codigoQR: `QR-${Date.now()}`, // En producción sería un QR real
-      };
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-      localStorage.setItem('ultimaCompra', JSON.stringify(compraFinalizada));
-      localStorage.removeItem('compraActual');
-      router.push(`/eventos/${eventoId}/comprar/exito`);
-    }, 2000);
-  };
+    // Genera el QR real
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const response = await fetch('/api/generar-qr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventoId,
+        usuarioId: user.id,
+        entradas: compra.entradas,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al generar código QR');
+    }
+
+    const qrResult = await response.json();
+
+    // Guarda información de la compra completada con QR real
+    const compraFinalizada = {
+      ...compra,
+      numeroOrden: Math.floor(Math.random() * 1000000),
+      fechaCompra: new Date().toISOString(),
+      metodoPago: metodoPago === 'tarjeta' ? `Tarjeta terminada en ${numeroTarjeta.slice(-4)}` : metodoPago.toUpperCase(),
+      reservaId: qrResult.reservaId,
+      qrDataURL: qrResult.qrDataURL, // Imagen QR en base64
+      qrData: qrResult.qrData, // Datos del QR
+    };
+
+    localStorage.setItem('ultimaCompra', JSON.stringify(compraFinalizada));
+    localStorage.removeItem('compraActual');
+    router.push(`/eventos/${eventoId}/comprar/exito`);
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Hubo un error al procesar el pago. Intenta nuevamente.');
+    setProcesando(false);
+  }
+};
 
   if (!compra) {
     return (
