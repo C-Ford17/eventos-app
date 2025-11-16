@@ -36,11 +36,17 @@ export default function LoginPage() {
 
       const data = await res.json();
       console.log("Login exitoso:", data);
-
       // Guarda el usuario en localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      router.push("/dashboard");
+      // Verifica si hay una redirección pendiente
+      const redirectUrl = localStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        localStorage.removeItem('redirectAfterLogin');
+        router.push(redirectUrl);
+      }
+      else {
+        router.push("/dashboard");
+      }
       
     } catch (error: any) {
       console.error("Error de conexión:", error);
