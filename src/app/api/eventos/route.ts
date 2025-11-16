@@ -15,9 +15,10 @@ export async function GET(req: Request) {
       where: {
         ...(categoria && { categoria_id: categoria }),
         estado,
-        fecha_inicio: {
-          gte: new Date(), // Solo eventos futuros
-        },
+        // ← ELIMINA O COMENTA EL FILTRO DE FECHA:
+        // fecha_inicio: {
+        //   gte: new Date(),
+        // },
       },
       include: {
         categoria: true,
@@ -46,6 +47,11 @@ export async function GET(req: Request) {
         0
       );
 
+      const disponibilidad = evento.aforo_max - totalReservas;
+      const porcentajeOcupacion = evento.aforo_max > 0 
+        ? Math.round((totalReservas / evento.aforo_max) * 100) 
+        : 0;
+
       return {
         id: evento.id,
         nombre: evento.nombre,
@@ -55,10 +61,13 @@ export async function GET(req: Request) {
         ubicacion: evento.ubicacion,
         aforo_max: evento.aforo_max,
         categoria: evento.categoria.nombre,
+        categoria_id: evento.categoria_id,
         organizador: evento.organizador.nombre,
+        organizador_id: evento.organizador_id, // ← ESTO FALTABA
         estado: evento.estado,
         reservas: totalReservas,
-        disponibilidad: evento.aforo_max - totalReservas,
+        disponibilidad,
+        porcentajeOcupacion,
       };
     });
 

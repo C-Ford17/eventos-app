@@ -5,12 +5,13 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // GET - Obtener detalles de un evento específico
+// GET - Obtener detalles de un evento específico
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ← CAMBIO: Promise
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // ← CAMBIO: await
 
     const evento = await prisma.evento.findUnique({
       where: { id },
@@ -34,7 +35,7 @@ export async function GET(
 
     if (!evento) {
       return NextResponse.json(
-        { error: 'Evento no encontrado' },
+        { success: false, error: 'Evento no encontrado' },
         { status: 404 }
       );
     }
@@ -62,7 +63,7 @@ export async function GET(
   } catch (error: any) {
     console.error('Error obteniendo evento:', error);
     return NextResponse.json(
-      { error: 'Error al obtener evento' },
+      { success: false, error: 'Error al obtener evento' },
       { status: 500 }
     );
   }
@@ -71,10 +72,10 @@ export async function GET(
 // PUT - Actualizar evento
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ← CAMBIO
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // ← CAMBIO
     const body = await req.json();
     const {
       nombre,
@@ -148,10 +149,10 @@ export async function PUT(
 // DELETE - Cancelar evento (soft delete)
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ← CAMBIO
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // ← CAMBIO
     const { searchParams } = new URL(req.url);
     const organizador_id = searchParams.get('organizador_id');
 
