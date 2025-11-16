@@ -5,9 +5,17 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    console.log('Datos recibidos:', body); // Para debugging
     const { nombre, email, password } = body
+    // Validación explícita
     if (!nombre || !email || !password) {
-      return NextResponse.json({ error: 'Faltan datos' }, { status: 400 })
+      return NextResponse.json(
+        { 
+          error: 'Faltan campos requeridos',
+          received: { nombre: !!nombre, email: !!email, password: !!password }
+        },
+        { status: 400 }
+      );
     }
     // Chequea si el usuario ya existe
     const exist = await prisma.usuario.findUnique({ where: { email } })

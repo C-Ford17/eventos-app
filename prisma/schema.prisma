@@ -13,7 +13,7 @@ model Usuario {
   nombre       String
   email        String    @unique
   password     String
-  tipo_usuario String    // organizador, asistente, proveedor, staff
+  tipo_usuario String    @default("asistente") // organizador, asistente, proveedor, staff
   telefono     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

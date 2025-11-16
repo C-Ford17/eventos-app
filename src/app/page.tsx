@@ -2,21 +2,7 @@
 export default function Home() {
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
-      {/* Barra de navegación superior */}
-      <nav className="flex items-center justify-between p-4 border-b border-neutral-800">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-lg">EventPlatform</span>
-        </div>
-        <div className="flex items-center gap-8">
-          <a href="#" className="hover:underline">Eventos</a>
-          <a href="#" className="hover:underline">Sobre Nosotros</a>
-          <a href="#" className="hover:underline">Contacto</a>
-        </div>
-        <div className="flex gap-2">
-          <a href="/login" className="px-4 py-1 bg-neutral-800 rounded text-white hover:bg-neutral-700">Iniciar Sesión</a>
-          <a href="/register" className="px-4 py-1 bg-blue-600 rounded text-white hover:bg-blue-700">Registrarse</a>
-        </div>
-      </nav>
+
 
       {/* Hero principal */}
       <section className="flex flex-col items-center justify-center py-20 bg-cover bg-center" style={{backgroundImage: "url('/fondo-hero.jpg')"}}>
