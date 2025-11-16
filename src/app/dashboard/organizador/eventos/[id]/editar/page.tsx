@@ -6,32 +6,95 @@ import { useRouter, useParams } from 'next/navigation';
 export default function EditarEventoPage() {
   const router = useRouter();
   const params = useParams();
-  const eventoId = params.id;
+  const [loading, setLoading] = useState(true);
+  const [categorias, setCategorias] = useState<any[]>([]);
+  
+  // Estados del formulario
+  const [nombre, setNombre] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
+  const [aforo, setAforo] = useState('');
+  const [categoria, setCategoria] = useState('');
 
-  // Datos de ejemplo - en producción vendrían de la API
-  const [formData, setFormData] = useState({
-    nombre: 'Tech Summit 2024',
-    descripcion: 'Conferencia sobre las últimas tecnologías',
-    fecha: '2024-11-01T10:00',
-    lugar: 'Centro de Convenciones',
-    aforo: '200',
-    precio: '75000',
-    categoria: 'tecnologia',
-  });
+  // Cargar categorías
+  useEffect(() => {
+    fetch('/api/categorias')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCategorias(data.categorias);
+        }
+      })
+      .catch(err => console.error('Error:', err));
+  }, []);
+
+  // Cargar datos del evento
+  useEffect(() => {
+    fetch(`/api/eventos/${params.id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const evento = data.evento;
+          setNombre(evento.nombre);
+          setDescripcion(evento.descripcion);
+          setFechaInicio(evento.fecha_inicio.split('T')[0]);
+          setFechaFin(evento.fecha_fin?.split('T')[0] || '');
+          setUbicacion(evento.ubicacion);
+          setAforo(evento.aforo_max.toString());
+          setCategoria(evento.categoria_id);
+        }
+      })
+      .catch(err => console.error('Error:', err))
+      .finally(() => setLoading(false));
+  }, [params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Actualizar evento:', eventoId, formData);
-    alert('Evento actualizado exitosamente (funcionalidad pendiente de API)');
-    router.push('/dashboard/organizador/eventos');
+    setLoading(true);
+
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      const response = await fetch(`/api/eventos/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre,
+          descripcion,
+          fecha_inicio: fechaInicio,
+          fecha_fin: fechaFin,
+          ubicacion,
+          aforo_max: parseInt(aforo),
+          categoria_id: categoria,
+          organizador_id: user.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Error al actualizar evento');
+      }
+
+      alert('Evento actualizado exitosamente');
+      router.push('/dashboard/organizador/eventos');
+    } catch (error: any) {
+      console.error('Error:', error);
+      alert(error.message || 'Error al actualizar evento');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -53,9 +116,8 @@ export default function EditarEventoPage() {
             </label>
             <input
               type="text"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
               required
               className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -66,17 +128,17 @@ export default function EditarEventoPage() {
               Categoría *
             </label>
             <select
-              name="categoria"
-              value={formData.categoria}
-              onChange={handleChange}
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
               required
               className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="tecnologia">Tecnología</option>
-              <option value="musica">Música</option>
-              <option value="arte">Arte</option>
-              <option value="deportes">Deportes</option>
-              <option value="educacion">Educación</option>
+              <option value="">Selecciona una categoría</option>
+              {categorias.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.nombre}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -86,9 +148,8 @@ export default function EditarEventoPage() {
             Descripción *
           </label>
           <textarea
-            name="descripcion"
-            value={formData.descripcion}
-            onChange={handleChange}
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
             required
             rows={4}
             className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -98,13 +159,12 @@ export default function EditarEventoPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Fecha y Hora *
+              Fecha de Inicio *
             </label>
             <input
               type="datetime-local"
-              name="fecha"
-              value={formData.fecha}
-              onChange={handleChange}
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
               required
               className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -112,14 +172,12 @@ export default function EditarEventoPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Lugar *
+              Fecha de Fin (opcional)
             </label>
             <input
-              type="text"
-              name="lugar"
-              value={formData.lugar}
-              onChange={handleChange}
-              required
+              type="datetime-local"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
               className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -128,30 +186,29 @@ export default function EditarEventoPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Aforo *
+              Ubicación *
             </label>
             <input
-              type="number"
-              name="aforo"
-              value={formData.aforo}
-              onChange={handleChange}
+              type="text"
+              value={ubicacion}
+              onChange={(e) => setUbicacion(e.target.value)}
               required
-              min="1"
+              placeholder="Ej: Centro de Convenciones"
               className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Precio (COP) *
+              Aforo Máximo *
             </label>
             <input
               type="number"
-              name="precio"
-              value={formData.precio}
-              onChange={handleChange}
+              value={aforo}
+              onChange={(e) => setAforo(e.target.value)}
               required
-              min="0"
+              min="1"
+              placeholder="Ej: 500"
               className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -160,9 +217,10 @@ export default function EditarEventoPage() {
         <div className="flex space-x-4">
           <button
             type="submit"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-semibold transition"
+            disabled={loading}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-semibold transition disabled:opacity-50"
           >
-            Guardar Cambios
+            {loading ? 'Guardando...' : 'Guardar Cambios'}
           </button>
           <button
             type="button"

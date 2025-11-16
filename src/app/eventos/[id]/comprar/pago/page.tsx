@@ -31,44 +31,65 @@ export default function PagoPage() {
   setProcesando(true);
 
   try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!user.id) {
+      alert('Debes iniciar sesión para continuar');
+      router.push('/login');
+      return;
+    }
+
     // Simula procesamiento de pago
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Genera el QR real
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const response = await fetch('/api/generar-qr', {
+    // Calcula cantidad total de boletos
+    const cantidadTotal = compra.entradas.reduce(
+      (sum: number, e: any) => sum + e.cantidad,
+      0
+    );
+
+    // Crea la reserva en la BD con la API
+    const response = await fetch('/api/reservas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        eventoId,
-        usuarioId: user.id,
-        entradas: compra.entradas,
+        evento_id: eventoId,
+        usuario_id: user.id,
+        cantidad_boletos: cantidadTotal,
+        metodo_pago: metodoPago === 'tarjeta' 
+          ? `Tarjeta terminada en ${numeroTarjeta.slice(-4)}` 
+          : 'PSE',
+        subtotal: compra.subtotal,
+        cargo_servicio: compra.cargoServicio,
+        total: compra.total,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error('Error al generar código QR');
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Error al crear reserva');
     }
 
-    const qrResult = await response.json();
-
-    // Guarda información de la compra completada con QR real
+    // Guarda información completa para la página de éxito
     const compraFinalizada = {
       ...compra,
-      numeroOrden: Math.floor(Math.random() * 1000000),
-      fechaCompra: new Date().toISOString(),
-      metodoPago: metodoPago === 'tarjeta' ? `Tarjeta terminada en ${numeroTarjeta.slice(-4)}` : metodoPago.toUpperCase(),
-      reservaId: qrResult.reservaId,
-      qrDataURL: qrResult.qrDataURL, // Imagen QR en base64
-      qrData: qrResult.qrData, // Datos del QR
+      numeroOrden: result.reserva.numeroOrden,
+      reservaId: result.reserva.id,
+      fechaCompra: result.reserva.fecha_reserva,
+      metodoPago: metodoPago === 'tarjeta' 
+        ? `Tarjeta terminada en ${numeroTarjeta.slice(-4)}` 
+        : 'PSE',
+      qrDataURL: result.reserva.qrDataURL,
+      qrData: result.reserva.qrData,
     };
 
     localStorage.setItem('ultimaCompra', JSON.stringify(compraFinalizada));
     localStorage.removeItem('compraActual');
     router.push(`/eventos/${eventoId}/comprar/exito`);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error);
-    alert('Hubo un error al procesar el pago. Intenta nuevamente.');
+    alert(error.message || 'Hubo un error al procesar el pago. Intenta nuevamente.');
     setProcesando(false);
   }
 };
