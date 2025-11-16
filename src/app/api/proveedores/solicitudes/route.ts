@@ -1,4 +1,4 @@
-// src/app/api/solicitudes/route.ts (si no existe, créala)
+// src/app/api/proveedores/solicitudes/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -8,7 +8,6 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const proveedor_id = searchParams.get('proveedor_id');
-    const estado = searchParams.get('estado');
 
     if (!proveedor_id) {
       return NextResponse.json(
@@ -17,18 +16,12 @@ export async function GET(request: Request) {
       );
     }
 
-    const where: any = {
-      productoServicio: {
-        proveedor_id,
-      },
-    };
-
-    if (estado && estado !== 'todas') {
-      where.estado_contratacion = estado;
-    }
-
     const solicitudes = await prisma.eventoProductoServicio.findMany({
-      where,
+      where: {
+        productoServicio: {
+          proveedor_id,
+        },
+      },
       include: {
         evento: {
           include: {

@@ -82,8 +82,24 @@ export default function DetalleEventoPage() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      {/* Imagen principal */}
+      {/* Imagen principal en detalles del evento */}
       <div className="relative h-96 bg-gradient-to-br from-blue-600 to-purple-600">
+        {evento.imagen_url ? (
+          // Imagen real del evento
+          <img
+            src={evento.imagen_url}
+            alt={evento.nombre}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ zIndex: 0 }}
+          />
+        ) : (
+          // Fallback
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center text-white/50" style={{ zIndex: 0 }}>
+            <svg className="w-28 h-28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950 to-transparent"></div>
         <div className="absolute bottom-0 left-0 right-0 p-8">
           <div className="max-w-7xl mx-auto">
@@ -93,6 +109,7 @@ export default function DetalleEventoPage() {
           </div>
         </div>
       </div>
+
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

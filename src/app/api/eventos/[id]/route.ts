@@ -149,16 +149,32 @@ export async function PUT(
 // DELETE - Cancelar evento (soft delete)
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string }> } // ← CAMBIO
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ← CAMBIO
+    const { id } = await context.params;
     const { searchParams } = new URL(req.url);
     const organizador_id = searchParams.get('organizador_id');
 
     // Verifica que el evento existe
     const evento = await prisma.evento.findUnique({
       where: { id },
+      include: {
+        reservas: {
+          where: {
+            estado_reserva: 'confirmada',
+          },
+          include: {
+            asistente: {
+              select: {
+                id: true,
+                nombre: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!evento) {
@@ -184,13 +200,60 @@ export async function DELETE(
       },
     });
 
-    // TODO: Aquí deberías procesar reembolsos automáticamente
-    // y enviar notificaciones a los asistentes
+    // ✅ Procesar reembolsos y notificaciones para cada asistente
+    for (const reserva of evento.reservas) {
+      const asistente = reserva.asistente;
+
+      // Actualizar estado de reserva a 'cancelada'
+      await prisma.reserva.update({
+        where: { id: reserva.id },
+        data: {
+          estado_reserva: 'cancelada',
+        },
+      });
+
+      // Crear registro de reembolso
+      await prisma.reembolso.create({
+        data: {
+          reserva_id: reserva.id,
+          monto_reembolso: reserva.precio_total,
+          estado_reembolso: 'procesado', // o 'pendiente' si es manual
+          fecha_procesado: new Date(),
+        },
+      });
+
+      // Crear notificación de cancelación para el asistente
+      await prisma.notificacion.create({
+        data: {
+          usuario_id: asistente.id,
+          tipo: 'cancelacion',
+          mensaje: `El evento "${evento.nombre}" ha sido cancelado. Se ha procesado tu reembolso de $${Number(
+            reserva.precio_total
+          ).toLocaleString('es-CO')}.`,
+          leida: false,
+        },
+      });
+
+      // Opcional: crear otra notificación de reembolso procesado
+      await prisma.notificacion.create({
+        data: {
+          usuario_id: asistente.id,
+          tipo: 'reembolso',
+          mensaje: `Tu reembolso de $${Number(reserva.precio_total).toLocaleString(
+            'es-CO'
+          )} ha sido procesado exitosamente.`,
+          leida: false,
+        },
+      });
+
+      console.log(`✅ Reembolso y notificación enviada a: ${asistente.email}`);
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Evento cancelado exitosamente',
       evento: eventoCancelado,
+      reembolsosGenerados: evento.reservas.length,
     });
   } catch (error: any) {
     console.error('Error cancelando evento:', error);

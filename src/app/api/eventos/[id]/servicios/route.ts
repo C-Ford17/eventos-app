@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 // GET - Listar servicios contratados para un evento
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: evento_id } = params;
+    const { id: evento_id } = await context.params; // Extraer correctamente el id
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
 

@@ -4,19 +4,18 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// PUT - Actualizar estado de solicitud (aceptar/rechazar)
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ✅ params es Promise
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params; // ✅ await params
     const body = await req.json();
     const { estado_contratacion, proveedor_id } = body;
 
-    if (!estado_contratacion) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'El estado es requerido' },
+        { success: false, error: 'ID de solicitud requerido' },
         { status: 400 }
       );
     }
@@ -31,19 +30,20 @@ export async function PUT(
 
     if (!solicitud) {
       return NextResponse.json(
-        { error: 'Solicitud no encontrada' },
+        { success: false, error: 'Solicitud no encontrada' },
         { status: 404 }
       );
     }
 
-    // Verifica que el usuario es el proveedor del servicio
-    if (proveedor_id && solicitud.productoServicio.proveedor_id !== proveedor_id) {
+    // Validar que el proveedor tiene permiso
+    if (solicitud.productoServicio.proveedor_id !== proveedor_id) {
       return NextResponse.json(
-        { error: 'No tienes permisos para modificar esta solicitud' },
+        { success: false, error: 'No tienes permiso para actualizar esta solicitud' },
         { status: 403 }
       );
     }
 
+    // Actualizar el estado
     const solicitudActualizada = await prisma.eventoProductoServicio.update({
       where: { id },
       data: {
@@ -51,51 +51,58 @@ export async function PUT(
       },
       include: {
         evento: {
-          select: {
-            nombre: true,
-            organizador: {
-              select: {
-                nombre: true,
-                email: true,
-              },
-            },
-          },
-        },
-        productoServicio: {
           include: {
-            proveedor: {
-              select: {
-                nombre: true,
-              },
-            },
+            organizador: true,
           },
         },
+        productoServicio: true,
       },
     });
 
-    // TODO: Enviar notificación al organizador
+    // Si se acepta, crear notificación para el organizador
+    if (estado_contratacion === 'aceptado') {
+      await prisma.notificacion.create({
+        data: {
+          usuario_id: solicitudActualizada.evento.organizador_id,
+          tipo: 'solicitud_aceptada',
+          mensaje: `El proveedor "${solicitudActualizada.productoServicio.nombre}" ha aceptado tu solicitud para el evento "${solicitudActualizada.evento.nombre}"`,
+          leida: false,
+        },
+      });
+    }
+
+    // Si se rechaza, también notificar
+    if (estado_contratacion === 'rechazado') {
+      await prisma.notificacion.create({
+        data: {
+          usuario_id: solicitudActualizada.evento.organizador_id,
+          tipo: 'solicitud_rechazada',
+          mensaje: `El proveedor "${solicitudActualizada.productoServicio.nombre}" ha rechazado tu solicitud para el evento "${solicitudActualizada.evento.nombre}"`,
+          leida: false,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Solicitud ${estado_contratacion} exitosamente`,
       solicitud: solicitudActualizada,
     });
   } catch (error: any) {
     console.error('Error actualizando solicitud:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar solicitud' },
+      { success: false, error: 'Error al actualizar solicitud' },
       { status: 500 }
     );
   }
 }
 
-// GET - Obtener detalles de solicitud
+// ✅ También GET para obtener detalle de una solicitud
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const solicitud = await prisma.eventoProductoServicio.findUnique({
       where: { id },
@@ -110,23 +117,13 @@ export async function GET(
             },
           },
         },
-        productoServicio: {
-          include: {
-            proveedor: {
-              select: {
-                id: true,
-                nombre: true,
-                email: true,
-              },
-            },
-          },
-        },
+        productoServicio: true,
       },
     });
 
     if (!solicitud) {
       return NextResponse.json(
-        { error: 'Solicitud no encontrada' },
+        { success: false, error: 'Solicitud no encontrada' },
         { status: 404 }
       );
     }
@@ -138,7 +135,7 @@ export async function GET(
   } catch (error: any) {
     console.error('Error obteniendo solicitud:', error);
     return NextResponse.json(
-      { error: 'Error al obtener solicitud' },
+      { success: false, error: 'Error al obtener solicitud' },
       { status: 500 }
     );
   }

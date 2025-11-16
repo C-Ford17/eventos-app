@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useStaff } from '@/contexts/StaffContext';
 import EventoSelector from '@/components/EventoSelector';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from "jspdf";
 
 interface ReporteData {
   stats: {
@@ -51,14 +54,33 @@ export default function ReportesPage() {
   };
 
   const exportarExcel = () => {
-    // TODO: Implementar exportación a Excel
-    alert('Exportación a Excel - Por implementar');
-  };
+  if (!reporte) return;
+  const hoja = [
+    ['Estadística', 'Valor'],
+    ['Total Reservas', reporte.stats.totalReservas],
+    ['Total Validados', reporte.stats.totalValidados],
+    ['Total Pendientes', reporte.stats.totalPendientes],
+    ['Porcentaje Validación', `${reporte.stats.porcentajeValidacion}%`],
+    // ...agrega más si quieres
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(hoja);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Resumen');
+  const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+  saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'reporte.xlsx');
+};
 
   const exportarPDF = () => {
-    // TODO: Implementar exportación a PDF
-    alert('Exportación a PDF - Por implementar');
-  };
+  if (!reporte) return;
+  const doc = new jsPDF();
+  doc.text('Reporte del Evento', 10, 10);
+  doc.text(`Total reservas: ${reporte.stats.totalReservas}`, 10, 20);
+  doc.text(`Validados: ${reporte.stats.totalValidados}`, 10, 30);
+  doc.text(`Pendientes: ${reporte.stats.totalPendientes}`, 10, 40);
+  doc.text(`% Validación: ${reporte.stats.porcentajeValidacion}%`, 10, 50);
+  // Puedes agregar tablas o más info si quieres
+  doc.save('reporte.pdf');
+};
 
   if (loading) {
     return (

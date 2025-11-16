@@ -17,7 +17,7 @@ model Usuario {
   tipo_usuario String
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-
+  telefono     String?  // ✅ AGREGAR ESTA LÍNEA (opcional)
   eventosCreados     Evento[]           @relation("OrganizadorEventos")
   reservas           Reserva[]          @relation("AsistenteReservas")
   productosServicios ProductoServicio[] @relation("ProveedorServicios")
@@ -52,6 +52,7 @@ model Evento {
   categoria_id   String
   organizador_id String
   estado         String   @default("programado")
+  imagen_url     String?  // <--- AGREGA ESTA LÍNEA
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -131,7 +132,7 @@ model Reembolso {
   fecha_solicitud  DateTime  @default(now())
   fecha_procesado  DateTime?
   createdAt        DateTime  @default(now()) @map("created_at")
-
+  
   reserva Reserva @relation(fields: [reserva_id], references: [id])
 
   @@map("reembolsos")

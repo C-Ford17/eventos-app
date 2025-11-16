@@ -63,13 +63,14 @@ export async function GET(req: Request) {
         fecha_fin: evento.fecha_fin,
         ubicacion: evento.ubicacion,
         aforo_max: evento.aforo_max,
+        imagen_url: evento.imagen_url, // <--- ¡ESTO ES CLAVE!
         categoria: evento.categoria.nombre,
         categoria_id: evento.categoria_id,
         organizador: evento.organizador.nombre,
         organizador_id: evento.organizador_id, // ← ESTO FALTABA
         estado: evento.estado,
-        reservas: totalReservas,
-        disponibilidad,
+        boletos_vendidos: totalReservas,
+        boletos_disponibles: disponibilidad,
         porcentajeOcupacion,
       };
     });
@@ -100,6 +101,7 @@ export async function POST(req: Request) {
       aforo_max,
       categoria_id,
       organizador_id,
+      imagen_url // <-- AGREGA ESTO
     } = body;
 
     // Validaciones
@@ -152,6 +154,7 @@ export async function POST(req: Request) {
         categoria_id: categoriaFinal,
         organizador_id,
         estado: 'programado',
+        imagen_url   // <-- AGREGA ESTO
       },
       include: {
         categoria: true,

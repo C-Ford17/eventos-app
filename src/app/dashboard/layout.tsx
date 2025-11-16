@@ -42,6 +42,7 @@ export default function DashboardLayout({
           { label: 'Crear Evento', href: '/dashboard/organizador/crear' },
           { label: 'Analíticas', href: '/dashboard/organizador/analiticas' },
           { label: 'Proveedores', href: '/dashboard/organizador/proveedores' },
+          { label: 'Servicios Contratados', href: '/dashboard/organizador/servicios-contratados' }, // <--- agrega esta línea
         ];
       case 'proveedor':
         return [
