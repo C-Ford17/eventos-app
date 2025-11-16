@@ -1,7 +1,8 @@
 // src/app/dashboard/staff/escanear/page.tsx
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import jsQR from 'jsqr';
 
 // Importa el escáner de forma dinámica para evitar problemas de SSR
 const QRScanner = dynamic(() => import('@/components/QRScanner'), {
@@ -16,19 +17,71 @@ interface ActividadReciente {
   mensaje?: string;
 }
 
+interface Evento {
+  id: string;
+  nombre: string;
+  fecha_inicio: string;
+  ubicacion: string;
+  aforo_max: number;
+}
+
+
 export default function EscanearEntradasPage() {
   const [camaraActiva, setCamaraActiva] = useState(false);
   const [codigoManual, setCodigoManual] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [validando, setValidando] = useState(false);
   const [actividadReciente, setActividadReciente] = useState<ActividadReciente[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  // ✅ NUEVO: Estado para eventos y evento seleccionado
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [eventoSeleccionado, setEventoSeleccionado] = useState<string>('');
+  const [statsEvento, setStatsEvento] = useState({
+    asistentesValidados: 0,
+    totalReservas: 0,
+    aforoMax: 0,
+  });
 
-  // Datos del evento actual
-  const eventoActual = {
-    nombre: 'Evento Anual 2024',
-    asistentesRegistrados: 678,
-    aforoTotal: 1500,
+  // ✅ Cargar lista de eventos al montar
+  useEffect(() => {
+    fetch('/api/eventos?estado=programado')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.eventos.length > 0) {
+          setEventos(data.eventos);
+          // Seleccionar el primer evento por defecto
+          const primerEvento = data.eventos[0];
+          setEventoSeleccionado(primerEvento.id);
+          cargarStatsEvento(primerEvento.id);
+        }
+      })
+      .catch(err => console.error('Error cargando eventos:', err));
+  }, []);
+
+  // ✅ Cargar estadísticas del evento seleccionado
+  const cargarStatsEvento = async (eventoId: string) => {
+    try {
+      const response = await fetch(`/api/eventos/${eventoId}/stats`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setStatsEvento({
+          asistentesValidados: data.stats.asistentesValidados || 0,
+          totalReservas: data.stats.totalReservas || 0,
+          aforoMax: data.stats.aforoMax || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error cargando stats:', error);
+    }
   };
+
+  // ✅ Cuando cambia el evento seleccionado
+  useEffect(() => {
+    if (eventoSeleccionado) {
+      cargarStatsEvento(eventoSeleccionado);
+    }
+  }, [eventoSeleccionado]);
 
   const handleActivarCamara = () => {
     setCamaraActiva(!camaraActiva);
@@ -44,7 +97,8 @@ export default function EscanearEntradasPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         qrData,
-        staff_id: user.id // Envía el ID del staff para auditoría
+        staff_id: user.id, // Envía el ID del staff para auditoría
+        evento_id: eventoSeleccionado, // ✅ Enviar evento seleccionado
       }),
     });
 
@@ -60,7 +114,8 @@ export default function EscanearEntradasPage() {
         mensaje: result.message,
       };
       setActividadReciente([nuevaActividad, ...actividadReciente]);
-      
+      // ✅ Actualizar stats
+      cargarStatsEvento(eventoSeleccionado);
       showNotification(`✓ ${result.message}`, 'success');
     } else {
       // Error de validación
@@ -84,23 +139,110 @@ export default function EscanearEntradasPage() {
 };
 
   const handleScanSuccess = (decodedText: string) => {
-    if (!validando) {
-      validarQR(decodedText);
-    }
-  };
+  console.log('📱 QR detectado desde cámara:', decodedText);
+  
+  if (!validando) {
+    validarQR(decodedText);
+  }
+};
 
-  const handleScanError = (error: string) => {
-    console.error('Error del escáner:', error);
-  };
+const handleScanError = (error: string) => {
+  console.error('❌ Error del escáner:', error);
+  showNotification('Error con la cámara: ' + error, 'error');
+};
 
-  const handleValidarManual = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!codigoManual.trim()) {
-      alert('Ingresa un código válido');
+  // src/app/dashboard/staff/escanear/page.tsx
+const handleValidarManual = (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!codigoManual.trim()) {
+    showNotification('Ingresa un código válido', 'error');
+    return;
+  }
+
+  // ✅ Validar que sea un JSON válido
+  try {
+    // Intentar parsear para validar formato
+    const parsed = JSON.parse(codigoManual);
+    
+    // Verificar que tenga los campos necesarios
+    if (!parsed.reservaId || !parsed.hash || !parsed.eventoId || !parsed.usuarioId) {
+      showNotification('Código QR incompleto o inválido', 'error');
       return;
     }
+    
+    // Enviar el string original (ya validado)
     validarQR(codigoManual);
     setCodigoManual('');
+  } catch (error) {
+    console.error('Error parseando código manual:', error);
+    showNotification('Código QR inválido - formato JSON incorrecto', 'error');
+  }
+};
+
+// ✅ NUEVA FUNCIÓN: Subir imagen
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    console.log('📸 Procesando imagen:', file.name);
+
+    try {
+      // Leer imagen
+      const imageDataUrl = await readFileAsDataURL(file);
+      
+      // Crear elemento de imagen
+      const img = new Image();
+      img.src = imageDataUrl;
+      
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+
+      // Crear canvas para procesar
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        throw new Error('No se pudo crear contexto de canvas');
+      }
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // Obtener datos de la imagen
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      // Buscar código QR
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      });
+
+      if (code) {
+        console.log('✅ QR detectado en imagen:', code.data);
+        validarQR(code.data);
+      } else {
+        showNotification('❌ No se detectó ningún código QR en la imagen', 'error');
+      }
+    } catch (error) {
+      console.error('❌ Error procesando imagen:', error);
+      showNotification('Error al procesar la imagen', 'error');
+    }
+
+    // Resetear input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+    const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const playSuccessSound = () => {
@@ -121,17 +263,37 @@ export default function EscanearEntradasPage() {
     alert(message);
   };
 
+  // ✅ Obtener evento seleccionado
+  const eventoActual = eventos.find(e => e.id === eventoSeleccionado);
   return (
     <div className="min-h-screen bg-gray-950 py-8">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Control de Acceso</h1>
-          <p className="text-gray-400">
-            Presenta el código QR a la cámara para validarlo.
-          </p>
-          <div className="mt-4 text-sm text-gray-500">
-            Control de Acceso: {eventoActual.nombre}
+          {/* ✅ SELECTOR DE EVENTO */}
+          <div className="bg-neutral-800 p-4 rounded-lg mb-4">
+            <label className="block text-gray-400 text-sm mb-2">
+              Evento Actual:
+            </label>
+            <select
+              value={eventoSeleccionado}
+              onChange={(e) => setEventoSeleccionado(e.target.value)}
+              className="w-full px-4 py-3 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecciona un evento</option>
+              {eventos.map(evento => (
+                <option key={evento.id} value={evento.id}>
+                  {evento.nombre} - {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')}
+                </option>
+              ))}
+            </select>
+            
+            {eventoActual && (
+              <div className="mt-3 text-sm text-gray-400">
+                📍 {eventoActual.ubicacion}
+              </div>
+            )}
           </div>
         </div>
 
@@ -141,6 +303,13 @@ export default function EscanearEntradasPage() {
             <div className="bg-neutral-800 p-6 rounded-lg">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-white">Visor de Cámara</h2>
+                {/* ✅ NUEVO BOTÓN: Subir imagen */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold transition"
+                  >
+                    📸 Subir Imagen
+                  </button>
                 <button
                   onClick={handleActivarCamara}
                   className={`px-4 py-2 rounded font-semibold transition ${
@@ -152,6 +321,15 @@ export default function EscanearEntradasPage() {
                   {camaraActiva ? 'Detener Cámara' : 'Activar Cámara'}
                 </button>
               </div>
+
+              {/* Input oculto para subir imagen */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
 
               {/* Área de cámara */}
               <div className="mb-6">
@@ -209,27 +387,31 @@ export default function EscanearEntradasPage() {
             </div>
           </div>
 
-          {/* Panel lateral */}
+          {/* Panel lateral con stats reales */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Asistencia en vivo */}
+            {/* ✅ Asistencia en vivo CON DATOS REALES */}
             <div className="bg-neutral-800 p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-white mb-4">Asistencia en Vivo</h3>
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-400">Asistentes registrados</span>
+                  <span className="text-gray-400">Asistentes validados</span>
                   <span className="text-white font-semibold">
-                    {eventoActual.asistentesRegistrados} / {eventoActual.aforoTotal}
+                    {statsEvento.asistentesValidados} / {statsEvento.aforoMax}
                   </span>
                 </div>
                 <div className="w-full bg-neutral-700 rounded-full h-3">
                   <div
                     className="bg-blue-600 h-3 rounded-full transition-all"
-                    style={{ width: `${(eventoActual.asistentesRegistrados / eventoActual.aforoTotal) * 100}%` }}
+                    style={{ 
+                      width: `${statsEvento.aforoMax > 0 ? (statsEvento.asistentesValidados / statsEvento.aforoMax) * 100 : 0}%` 
+                    }}
                   ></div>
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  Total reservas: {statsEvento.totalReservas}
                 </div>
               </div>
 
-              {/* Búsqueda rápida */}
               <div>
                 <input
                   type="text"
