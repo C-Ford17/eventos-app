@@ -13,15 +13,23 @@ export default function QRScanner({ onScanSuccess, onScanError, isActive }: QRSc
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    if (isActive && !isScanning) {
-      startScanner();
-    } else if (!isActive && isScanning) {
-      stopScanner();
-    }
+    isMounted.current = true;
+
+    const initScanner = async () => {
+      if (isActive && !isScanning && !scannerRef.current) {
+        await startScanner();
+      } else if (!isActive && scannerRef.current) {
+        await stopScanner();
+      }
+    };
+
+    initScanner();
 
     return () => {
+      isMounted.current = false;
       if (scannerRef.current) {
         stopScanner();
       }
@@ -29,46 +37,82 @@ export default function QRScanner({ onScanSuccess, onScanError, isActive }: QRSc
   }, [isActive]);
 
   const startScanner = async () => {
+    if (scannerRef.current) {
+      console.log('⚠️ Escáner ya existe');
+      return;
+    }
+
     try {
       setError(null);
+      console.log('🎥 Iniciando escáner...');
+
       const html5QrCode = new Html5Qrcode('qr-reader');
       scannerRef.current = html5QrCode;
 
       await html5QrCode.start(
-        { facingMode: 'environment' }, // Usa cámara trasera
+        { facingMode: 'environment' }, // Cámara trasera
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
         },
         (decodedText) => {
-          // Escaneo exitoso
-          onScanSuccess(decodedText);
+          console.log('✅ QR detectado:', decodedText);
+          
+          if (isMounted.current) {
+            onScanSuccess(decodedText);
+          }
         },
         (errorMessage) => {
-          // Error durante el escaneo (es normal, ocurre cuando no detecta QR)
-          // No mostramos estos errores al usuario
+          // Errores normales mientras busca QR - no mostrar
         }
       );
 
-      setIsScanning(true);
-    } catch (err: any) {
-      console.error('Error iniciando escáner:', err);
-      setError('No se pudo acceder a la cámara. Verifica los permisos.');
-      if (onScanError) {
-        onScanError(err.message);
+      if (isMounted.current) {
+        setIsScanning(true);
+        console.log('✅ Escáner iniciado correctamente');
       }
+    } catch (err: any) {
+      console.error('❌ Error iniciando escáner:', err);
+      
+      if (isMounted.current) {
+        const errorMsg = 'No se pudo acceder a la cámara. Verifica los permisos.';
+        setError(errorMsg);
+        
+        if (onScanError) {
+          onScanError(err.message);
+        }
+      }
+      
+      scannerRef.current = null;
     }
   };
 
   const stopScanner = async () => {
-    if (scannerRef.current && isScanning) {
-      try {
+    if (!scannerRef.current) {
+      return;
+    }
+
+    try {
+      console.log('🛑 Deteniendo escáner...');
+      
+      if (scannerRef.current.isScanning) {
         await scannerRef.current.stop();
-        scannerRef.current.clear();
-        scannerRef.current = null;
+      }
+      
+      await scannerRef.current.clear();
+      scannerRef.current = null;
+      
+      if (isMounted.current) {
         setIsScanning(false);
-      } catch (err) {
-        console.error('Error deteniendo escáner:', err);
+        console.log('✅ Escáner detenido');
+      }
+    } catch (err) {
+      console.error('❌ Error deteniendo escáner:', err);
+      scannerRef.current = null;
+      
+      if (isMounted.current) {
+        setIsScanning(false);
       }
     }
   };
@@ -80,7 +124,23 @@ export default function QRScanner({ onScanSuccess, onScanError, isActive }: QRSc
           {error}
         </div>
       )}
-      <div id="qr-reader" className="w-full rounded-lg overflow-hidden"></div>
+      
+      <div 
+        id="qr-reader" 
+        className="w-full rounded-lg overflow-hidden border-2 border-blue-500"
+        style={{ minHeight: '300px' }}
+      ></div>
+      
+      {isScanning && (
+        <div className="mt-4 text-center">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-green-400 text-sm font-medium">
+              Cámara activa - Centra el QR en el recuadro
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
