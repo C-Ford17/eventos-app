@@ -1,96 +1,150 @@
-// src/app/register/page.tsx
-'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
-  const [nombre, setNombre] = useState('');  // <-- Cambiado de 'name' a 'nombre'
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [tipoUsuario, setTipoUsuario] = useState("asistente"); // Nuevo estado
+  const [isLoading, setIsLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
-  
-  try {
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, email, password })
-    });
-    
-    setLoading(false);
-    
-    // Verifica si la respuesta es JSON antes de parsear
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      const data = await res.json();
-      
-      if (res.ok) {
-        router.push('/login');
-      } else {
-        setError(data.error || 'No se pudo registrar el usuario.');
-        console.error('Error del servidor:', data);
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setServerError("");
+
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre, email, password, tipo_usuario: tipoUsuario }), // Incluye el rol
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setServerError(data.error || "Error al registrar usuario");
+        setIsLoading(false);
+        return;
       }
-    } else {
-      // La respuesta no es JSON, probablemente un error del servidor
-      const text = await res.text();
-      console.error('Respuesta no-JSON del servidor:', text);
-      setError('Error del servidor. Por favor, revisa la consola para más detalles.');
-    }
-    
-  } catch (err: any) {
-    setLoading(false);
-    setError('Error de conexión con el servidor');
-    console.error('Error:', err);
-  }
-}
 
+      // Redirige al login tras registro exitoso
+      router.push("/login?registered=true");
+    } catch (error: any) {
+      console.error("Error de conexión:", error);
+      setServerError("Error de conexión. Intenta nuevamente.");
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      <h2 className="text-2xl font-bold mb-4">Registro</h2>
-      <form className="bg-neutral-900 p-6 rounded w-full max-w-sm space-y-4 shadow" onSubmit={handleSubmit}>
-        <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 text-white"
-          type="text"
-          placeholder="Nombre completo"
-          value={nombre}
-          onChange={e => setNombre(e.target.value)}
-          required
-        />
-        <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 text-white"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
-        <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 text-white"
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
-        {error && <div className="text-red-400 text-sm">{error}</div>}
-        <button 
-          type="submit" 
-          disabled={loading}
-          className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold disabled:opacity-50"
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 py-12 px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
+            Registro
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-400">
+            Crea tu cuenta en EventPlatform
+          </p>
+        </div>
+
+        <form 
+          onSubmit={onSubmit} 
+          className="mt-8 space-y-6 bg-neutral-900 p-8 rounded-lg shadow"
         >
-          {loading ? 'Registrando...' : 'Registrarse'}
-        </button>
-      </form>
-      <p className="mt-4 text-sm text-neutral-300">
-        ¿Ya tienes cuenta? <a href="/login" className="text-blue-400 hover:underline">Iniciar sesión</a>
-      </p>
+          {serverError && (
+            <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded">
+              {serverError}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="nombre" className="block text-sm font-medium text-gray-300 mb-2">
+              Nombre completo
+            </label>
+            <input
+              id="nombre"
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              disabled={isLoading}
+              required
+              className="w-full px-3 py-2 rounded bg-neutral-800 text-white border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              required
+              placeholder="tu@email.com"
+              className="w-full px-3 py-2 rounded bg-neutral-800 text-white border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              Contraseña
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              required
+              className="w-full px-3 py-2 rounded bg-neutral-800 text-white border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+
+          {/* NUEVO: Selector de tipo de usuario */}
+          <div>
+            <label htmlFor="tipoUsuario" className="block text-sm font-medium text-gray-300 mb-2">
+              Tipo de cuenta
+            </label>
+            <select
+              id="tipoUsuario"
+              value={tipoUsuario}
+              onChange={(e) => setTipoUsuario(e.target.value)}
+              disabled={isLoading}
+              className="w-full px-3 py-2 rounded bg-neutral-800 text-white border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="asistente">Asistente - Comprar boletos y asistir a eventos</option>
+              <option value="organizador">Organizador - Crear y gestionar eventos</option>
+              <option value="proveedor">Proveedor - Ofrecer servicios para eventos</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            {isLoading ? "Registrando..." : "Registrarse"}
+          </button>
+
+          <div className="flex flex-col space-y-2 text-center">
+            <Link 
+              href="/login" 
+              className="text-sm text-blue-400 hover:text-blue-300"
+            >
+              ¿Ya tienes cuenta? Inicia sesión
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

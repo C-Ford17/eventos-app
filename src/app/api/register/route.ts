@@ -1,40 +1,61 @@
-import { prisma } from '@/lib/prisma'
-import { hash } from 'bcryptjs'
-import { NextResponse } from 'next/server'
+// src/app/api/register/route.ts
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    console.log('Datos recibidos:', body); // Para debugging
-    const { nombre, email, password } = body
-    // Validación explícita
+    const body = await req.json();
+    console.log('Datos recibidos:', body);
+    
+    const { nombre, email, password, tipo_usuario } = body; // Ahora recibe tipo_usuario
+    
     if (!nombre || !email || !password) {
       return NextResponse.json(
-        { 
-          error: 'Faltan campos requeridos',
-          received: { nombre: !!nombre, email: !!email, password: !!password }
-        },
+        { error: 'Faltan campos requeridos' },
         { status: 400 }
       );
     }
-    // Chequea si el usuario ya existe
-    const exist = await prisma.usuario.findUnique({ where: { email } })
-    if (exist) {
-      return NextResponse.json({ error: 'Ya existe el usuario' }, { status: 400 })
+
+    // Valida que el tipo de usuario sea válido
+    const tiposValidos = ['asistente', 'organizador', 'proveedor'];
+    const tipoFinal = tiposValidos.includes(tipo_usuario) ? tipo_usuario : 'asistente';
+
+    const existingUser = await prisma.usuario.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'El correo ya está registrado' },
+        { status: 409 }
+      );
     }
-    // Hashea la contraseña
-    const hashed = await hash(password, 10)
-    // Crea el usuario
-    await prisma.usuario.create({
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = await prisma.usuario.create({
       data: {
         nombre,
         email,
-        password: hashed,
-        tipo_usuario: 'asistente', // o el rol predeterminado
-      }
-    })
-    return NextResponse.json({ ok: true })
-  } catch (e) {
-    return NextResponse.json({ error: 'Hubo un error' }, { status: 500 })
+        password: hashedPassword,
+        tipo_usuario: tipoFinal, // Usa el tipo seleccionado
+      },
+    });
+
+    return NextResponse.json(
+      { 
+        message: 'Usuario creado exitosamente',
+        userId: user.id 
+      },
+      { status: 201 }
+    );
+    
+  } catch (error: any) {
+    console.error('Error completo en registro:', error);
+    return NextResponse.json(
+      { error: 'Error al registrar usuario' },
+      { status: 500 }
+    );
   }
 }
