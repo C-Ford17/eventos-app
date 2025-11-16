@@ -10,6 +10,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const categoria = searchParams.get('categoria');
     const estado = searchParams.get('estado') || 'programado';
+    const organizador_id = searchParams.get('organizador_id');
+    const limit = searchParams.get('limit'); // ✅ NUEVO
 
     const eventos = await prisma.evento.findMany({
       where: {
@@ -38,6 +40,7 @@ export async function GET(req: Request) {
       orderBy: {
         fecha_inicio: 'asc',
       },
+      ...(limit && { take: parseInt(limit) }), // ✅ NUEVO: Limitar resultados
     });
 
     // Calcula estadísticas para cada evento

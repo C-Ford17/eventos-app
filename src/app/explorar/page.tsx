@@ -1,12 +1,32 @@
 // src/app/explorar/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
+interface Evento {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  fecha_inicio: string;
+  ubicacion: string;
+  aforo_max: number;
+  imagen_url: string | null;
+  categoria: {
+    id: string;
+    nombre: string;
+  };
+  boletos_vendidos: number;
+  boletos_disponibles: number;
+}
+
 export default function ExplorarEventosPage() {
-  const [eventos, setEventos] = useState<any[]>([]);
+  const searchParams = useSearchParams();
+  const queryBusqueda = searchParams.get('q') || '';
+  
+  const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useState(queryBusqueda);
   const [categoriaFiltro, setCategoriaFiltro] = useState('todas');
   const [categorias, setCategorias] = useState<any[]>([]);
 
@@ -26,11 +46,9 @@ export default function ExplorarEventosPage() {
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
+    
     if (categoriaFiltro !== 'todas') {
-      const categoria = categorias.find(c => c.nombre === categoriaFiltro);
-      if (categoria) {
-        params.append('categoria', categoria.id);
-      }
+      params.append('categoria', categoriaFiltro);
     }
 
     fetch(`/api/eventos?${params.toString()}`)
@@ -42,13 +60,27 @@ export default function ExplorarEventosPage() {
       })
       .catch(err => console.error('Error cargando eventos:', err))
       .finally(() => setLoading(false));
-  }, [categoriaFiltro, categorias]);
+  }, [categoriaFiltro]);
+
+  // Actualizar búsqueda cuando viene del query param
+  useEffect(() => {
+    if (queryBusqueda) {
+      setBusqueda(queryBusqueda);
+    }
+  }, [queryBusqueda]);
 
   // Filtrado local por búsqueda
-  const eventosFiltrados = eventos.filter(evento => 
-    evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    evento.descripcion.toLowerCase().includes(busqueda.toLowerCase())
-  );
+const eventosFiltrados = eventos.filter(evento => {
+  const searchTerm = busqueda.toLowerCase();
+  
+  const matchBusqueda = 
+    (evento.nombre?.toLowerCase() || '').includes(searchTerm) ||
+    (evento.descripcion?.toLowerCase() || '').includes(searchTerm) ||
+    (evento.ubicacion?.toLowerCase() || '').includes(searchTerm) ||
+    (evento.categoria?.nombre?.toLowerCase() || '').includes(searchTerm);
+
+  return matchBusqueda;
+});
 
   if (loading) {
     return (
@@ -72,6 +104,11 @@ export default function ExplorarEventosPage() {
           <p className="text-xl text-gray-200">
             Encuentra y reserva tu próxima experiencia
           </p>
+          {queryBusqueda && (
+            <p className="text-gray-300 mt-2">
+              Resultados para: <span className="font-semibold">"{queryBusqueda}"</span>
+            </p>
+          )}
         </div>
       </div>
 
@@ -109,7 +146,9 @@ export default function ExplorarEventosPage() {
         {/* Grid de eventos */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {eventosFiltrados.map((evento) => {
-            const porcentajeOcupacion = ((evento.reservas / evento.aforo_max) * 100);
+            const porcentajeOcupacion = evento.aforo_max > 0 
+              ? ((evento.boletos_vendidos / evento.aforo_max) * 100) 
+              : 0;
 
             return (
               <Link
@@ -119,9 +158,22 @@ export default function ExplorarEventosPage() {
               >
                 {/* Imagen del evento */}
                 <div className="relative h-48 bg-gradient-to-br from-blue-600 to-purple-600">
+                  {evento.imagen_url ? (
+                    <img 
+                      src={evento.imagen_url} 
+                      alt={evento.nombre}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white/50">
+                      <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
                   <div className="absolute top-3 right-3">
                     <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
-                      {evento.categoria}
+                      {evento.categoria.nombre}
                     </span>
                   </div>
                 </div>
@@ -159,16 +211,16 @@ export default function ExplorarEventosPage() {
                   <div className="mb-4">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Disponibilidad</span>
-                      <span className={evento.disponibilidad > 10 ? 'text-green-400' : 'text-yellow-400'}>
-                        {evento.disponibilidad} lugares
+                      <span className={evento.boletos_disponibles > 10 ? 'text-green-400' : 'text-yellow-400'}>
+                        {evento.boletos_disponibles} lugares
                       </span>
                     </div>
                     <div className="w-full bg-neutral-700 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full ${
+                        className={`h-2 rounded-full transition-all ${
                           porcentajeOcupacion > 80 ? 'bg-red-500' : 'bg-green-500'
                         }`}
-                        style={{ width: `${porcentajeOcupacion}%` }}
+                        style={{ width: `${Math.min(porcentajeOcupacion, 100)}%` }}
                       ></div>
                     </div>
                   </div>
@@ -188,13 +240,18 @@ export default function ExplorarEventosPage() {
             <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-gray-400 text-lg">No se encontraron eventos</p>
+            <p className="text-gray-400 text-lg mb-2">No se encontraron eventos</p>
+            {busqueda && (
+              <p className="text-gray-500 mb-4">
+                No hay resultados para "{busqueda}"
+              </p>
+            )}
             <button
               onClick={() => {
                 setBusqueda('');
                 setCategoriaFiltro('todas');
               }}
-              className="mt-4 text-blue-400 hover:text-blue-300"
+              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
             >
               Limpiar filtros
             </button>
