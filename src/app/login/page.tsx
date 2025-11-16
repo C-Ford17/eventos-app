@@ -1,83 +1,125 @@
-'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-    
+    setIsLoading(true);
+    setServerError("");
+
+    console.log("Intentando login con:", { email });
+
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-      
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+
+      console.log("Respuesta status:", res.status);
+
+      if (!res.ok) {
         const data = await res.json();
-        setLoading(false);
-        
-        if (res.ok) {
-          // Login exitoso - redirige al dashboard
-          router.push('/dashboard');
-        } else {
-          setError(data.error || 'Error al iniciar sesión');
-        }
-      } else {
-        const text = await res.text();
-        console.error('Respuesta no-JSON:', text);
-        setError('Error del servidor');
-        setLoading(false);
+        setServerError(data.error || "Error al iniciar sesión");
+        setIsLoading(false);
+        return;
       }
+
+      const data = await res.json();
+      console.log("Login exitoso:", data);
+
+      // Guarda el usuario en localStorage
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      router.push("/dashboard");
       
-    } catch (err: any) {
-      setLoading(false);
-      setError('Error de conexión');
-      console.error('Error:', err);
+    } catch (error: any) {
+      console.error("Error de conexión:", error);
+      setServerError("Error de conexión. Intenta nuevamente.");
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      <h2 className="text-2xl font-bold mb-4">Iniciar sesión</h2>
-      <form className="bg-neutral-900 p-6 rounded w-full max-w-sm space-y-4 shadow" onSubmit={handleSubmit}>
-        <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 text-white"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
-        <input
-          className="w-full px-3 py-2 rounded bg-neutral-800 text-white"
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
-        {error && <div className="text-red-400 text-sm">{error}</div>}
-        <button 
-          type="submit" 
-          disabled={loading}
-          className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold disabled:opacity-50"
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 py-12 px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
+            Inicia Sesión
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-400">
+            Accede a tu cuenta de EventPlatform
+          </p>
+        </div>
+
+        <form 
+          onSubmit={onSubmit} 
+          className="mt-8 space-y-6 bg-neutral-900 p-8 rounded-lg shadow"
         >
-          {loading ? 'Iniciando sesión...' : 'Entrar'}
-        </button>
-      </form>
-      <p className="mt-4 text-sm text-neutral-300">
-        ¿No tienes cuenta? <a href="/register" className="text-blue-400 hover:underline">Regístrate</a>
-      </p>
+          {serverError && (
+            <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded">
+              {serverError}
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              required
+              placeholder="tu@email.com"
+              className="w-full px-3 py-2 rounded bg-neutral-800 text-white border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              Contraseña
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              required
+              className="w-full px-3 py-2 rounded bg-neutral-800 text-white border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+          </button>
+
+          <div className="flex flex-col space-y-2 text-center">
+            <Link 
+              href="/register" 
+              className="text-sm text-blue-400 hover:text-blue-300"
+            >
+              ¿No tienes cuenta? Regístrate
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

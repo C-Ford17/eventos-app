@@ -1,15 +1,33 @@
 // src/app/dashboard/layout.tsx
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex h-screen flex-col md:flex-row">
-      <nav className="w-full md:w-60 bg-gray-800 text-white flex flex-col p-4">
-        <p className="text-lg mb-4 font-bold">Mi Panel</p>
-        <a href="/dashboard/organizador" className="mb-2 hover:underline">Organizador</a>
-        <a href="/dashboard/proveedor" className="mb-2 hover:underline">Proveedor</a>
-        <a href="/dashboard/asistente" className="mb-2 hover:underline">Asistente</a>
-        {/* Puedes hacer que los enlaces estén condicionados al rol aquí */}
-      </nav>
-      <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+    <div className="min-h-screen bg-gray-950">
+      {/* Sidebar o navbar del dashboard */}
+      <aside className="fixed left-0 top-0 h-full w-64 bg-neutral-900 p-4">
+        <h2 className="text-white font-bold mb-4">Dashboard</h2>
+        <nav className="space-y-2">
+          <a href="/dashboard/asistente" className="block text-gray-300 hover:text-white">
+            Asistente
+          </a>
+          <a href="/dashboard/organizador" className="block text-gray-300 hover:text-white">
+            Organizador
+          </a>
+          <a href="/dashboard/proveedor" className="block text-gray-300 hover:text-white">
+            Proveedor
+          </a>
+        </nav>
+      </aside>
+
+      {/* Contenido principal */}
+      <main className="ml-64 p-8">
+        <div className="text-white">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }
