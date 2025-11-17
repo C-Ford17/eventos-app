@@ -157,7 +157,6 @@ export async function POST(req: Request) {
 
     // Inicia transacción
     const resultado = await prisma.$transaction(async (tx) => {
-      // Crea la reserva
       const reserva = await tx.reserva.create({
         data: {
           id: reservaId,
@@ -166,9 +165,9 @@ export async function POST(req: Request) {
           cantidad_boletos: parseInt(cantidad_boletos),
           precio_total: parseFloat(total),
           metodo_pago,
-          estado_reserva: 'confirmada',
+          estado_reserva: 'pendiente',  // <--- Aquí cambia el estado
           fecha_reserva: new Date(),
-          qr_data: qrString, // guardamos solo el UUID plano
+          qr_data: qrString,
           qr_hash: hash,
         },
       });
