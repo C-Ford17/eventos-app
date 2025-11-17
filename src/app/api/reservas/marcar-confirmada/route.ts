@@ -5,6 +5,8 @@ const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
+    const json = await req.json();
+    console.log("❗️Reserva confirmada llamada con datos:", json);
     const { reservaId, paymentId, metodoPago, estado } = await req.json();
 
     if (!reservaId || !estado) {

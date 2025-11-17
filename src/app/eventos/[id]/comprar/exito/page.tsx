@@ -62,6 +62,12 @@ export default function ExitoCompraPage() {
 
     // Verifica si el pago está aprobado y activa la actualización
     if (status === 'approved') {
+      console.log("Enviando confirmación manual:", {
+          reservaId: external_reference,
+          paymentId: payment_id,
+          metodoPago: payment_type,
+          estado: status,
+      });
       fetch('/api/reservas/marcar-confirmada', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,7 +77,12 @@ export default function ExitoCompraPage() {
           metodoPago: payment_type,
           estado: status,
         }),
-      });
+      })
+      .then(async res => {
+        const data = await res.json();
+        console.log("Respuesta del backend en confirmar:", data, res.status);
+      })
+      .catch(err => console.error("Error al marcar confirmada:", err));
     }
     return;
   }
