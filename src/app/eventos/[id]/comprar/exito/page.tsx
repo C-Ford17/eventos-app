@@ -15,85 +15,88 @@ export default function ExitoCompraPage() {
   const [compra, setCompra] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-  const collection_id = searchParams.get('collection_id');
-  const external_reference = searchParams.get('external_reference');
-  const status = searchParams.get('collection_status') || searchParams.get('status');
-  const payment_type = searchParams.get('payment_type');
-  const payment_id = searchParams.get('payment_id');
-
-  // Prioridad 1: Buscar por external_reference (backend)
-  if (external_reference && external_reference !== 'null') {
-    buscarPorExternalReference(external_reference);
-    return;
-  }
-
-  // Prioridad 2: Buscar por collection_id (backend)
-  if (collection_id && collection_id !== 'null') {
-    fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.reserva) {
-          transformarYSetCompra(data.reserva);
-        } else {
-          setLoading(false);
-        }
-      })
-      .catch(() => setLoading(false));
-    return;
-  }
-
-  // Prioridad 3: Si hay datos en searchParams, armar compra manual (fallback)
-  if (external_reference && status && payment_type) {
-    setCompra({
-      reservaId: external_reference,
-      evento: { nombre: 'Evento desconocido', fecha: '', lugar: '' },
-      entradas: [{ nombre: 'General', cantidad: 1, precio: 0 }],
-      numeroOrden: payment_id || '',
-      fechaCompra: new Date().toISOString(),
-      total: 0,
-      subtotal: 0,
-      cargoServicio: 0,
-      metodoPago: payment_type,
-      qrDataURL: null,
-      qrString: external_reference, // Mostrará el id como QR solo para referencia rápida
-    });
-    setLoading(false);
-
-    // Verifica si el pago está aprobado y activa la actualización
-    if (status === 'approved') {
-      console.log("Enviando confirmación manual:", {
-          reservaId: external_reference,
-          paymentId: payment_id,
-          metodoPago: payment_type,
-          estado: status,
-      });
-      fetch('/api/reservas/marcar-confirmada', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reservaId: external_reference,
-          paymentId: searchParams.get('payment_id'),
-          metodoPago: payment_type,
-          estado: status,
-        }),
-      })
+  // Centralizamos el fetch para marcar confirmada
+  function marcarReservaComoConfirmada(reservaId: string, paymentId: string | null, metodoPago: string | null, estado: string | null) {
+    if (!reservaId || !estado || estado !== 'approved') return;
+    fetch('/api/reservas/marcar-confirmada', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reservaId,
+        paymentId,
+        metodoPago,
+        estado,
+      }),
+    })
       .then(async res => {
         const data = await res.json();
-        console.log("Respuesta del backend en confirmar:", data, res.status);
+        console.log("Reserva actualizada desde éxito:", data, res.status);
       })
-      .catch(err => console.error("Error al marcar confirmada:", err));
-    }
-    return;
+      .catch(err => console.error('Error al marcar confirmada:', err));
   }
 
-  // Prioridad 4: Fallback localStorage
-  const compraStr = localStorage.getItem('ultimaCompra');
-  if (compraStr) {
-    setCompra(JSON.parse(compraStr));
-  }
-  setLoading(false);
-}, [searchParams]);
+  useEffect(() => {
+    const collection_id = searchParams.get('collection_id');
+    const external_reference = searchParams.get('external_reference');
+    const status = searchParams.get('collection_status') || searchParams.get('status');
+    const payment_type = searchParams.get('payment_type');
+    const payment_id = searchParams.get('payment_id');
+
+    // Prioridad 1: Buscar por external_reference (backend)
+    if (external_reference && external_reference !== 'null') {
+      buscarPorExternalReference(external_reference, status, payment_type, payment_id);
+      return;
+    }
+
+    // Prioridad 2: Buscar por collection_id (backend)
+    if (collection_id && collection_id !== 'null') {
+      fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.reserva) {
+            transformarYSetCompra(data.reserva, status, payment_type, payment_id);
+          } else {
+            setLoading(false);
+          }
+        })
+        .catch(() => setLoading(false));
+      return;
+    }
+
+    // Prioridad 3: Si hay datos en searchParams, armar compra manual (fallback)
+    if (external_reference && status && payment_type) {
+      setCompra({
+        reservaId: external_reference,
+        evento: { nombre: 'Evento desconocido', fecha: '', lugar: '' },
+        entradas: [{ nombre: 'General', cantidad: 1, precio: 0 }],
+        numeroOrden: payment_id || '',
+        fechaCompra: new Date().toISOString(),
+        total: 0,
+        subtotal: 0,
+        cargoServicio: 0,
+        metodoPago: payment_type,
+        qrDataURL: null,
+        qrString: external_reference, // Mostrará el id como QR solo para referencia rápida
+      });
+      setLoading(false);
+
+      // Marcar siempre si el estado es aprobado
+      marcarReservaComoConfirmada(
+        external_reference,
+        payment_id ?? null,
+        payment_type ?? null,
+        status ?? null
+      );
+      return;
+    }
+
+    // Prioridad 4: Fallback localStorage
+    const compraStr = localStorage.getItem('ultimaCompra');
+    if (compraStr) {
+      setCompra(JSON.parse(compraStr));
+    }
+    setLoading(false);
+  }, [searchParams]);
 
   // Genera el QR dataURL en frontend si solo tienes el código plano
   useEffect(() => {
@@ -102,11 +105,13 @@ export default function ExitoCompraPage() {
         width: 400,
         margin: 2,
         color: { dark: '#000000', light: '#FFFFFF' }
-      }).then(url => setCompra((prev: any) => ({ ...prev, qrDataURL: url })));
+      }).then(url =>
+        setCompra((prev: any) => ({ ...prev, qrDataURL: url }))
+      );
     }
   }, [compra]);
 
-  function transformarYSetCompra(reserva: any) {
+  function transformarYSetCompra(reserva: any, status?: string | null, payment_type?: string | null, payment_id?: string | null) {
     // Intenta preferir un base64, si no tienes uno toma el código plano y se generará luego el QR
     const rawQR = reserva.credencialesAcceso?.[0]?.codigo_qr || reserva.id;
     const dataUrl = rawQR && rawQR.startsWith('data:image') ? rawQR : null;
@@ -118,7 +123,7 @@ export default function ExitoCompraPage() {
         fecha: reserva.evento.fecha_inicio,
         lugar: reserva.evento.ubicacion,
       },
-      entradas: reserva.credencialesAcceso?.map((c : any) => ({
+      entradas: reserva.credencialesAcceso?.map((c: any) => ({
         nombre: c.tipo_entrada,
         cantidad: 1,
         precio: precioUnitario,
@@ -134,15 +139,29 @@ export default function ExitoCompraPage() {
       total: reserva.precio_total,
       subtotal: reserva.subtotal || reserva.precio_total,
       cargoServicio: reserva.cargo_servicio || 0,
-      metodoPago: reserva.pagos?.[0]?.metodo_pago || 'Pendiente',
+      metodoPago: reserva.pagos?.[0]?.metodo_pago || payment_type || 'Pendiente',
       qrDataURL: dataUrl,
       qrString: !dataUrl ? rawQR : null,
+      estado_transaccion: reserva.pagos?.[0]?.estado_transaccion // para validación
     };
     setCompra(compraTransformada);
     setLoading(false);
+
+    // Si finalmente es aprobado (ya sea desde backend o searchparam), siempre confirmar
+    if (
+      (status === 'approved' || compraTransformada.estado_transaccion === 'approved') &&
+      reserva.id
+    ) {
+      marcarReservaComoConfirmada(
+        reserva.id,
+        payment_id ?? null,        // <-- así conviertes undefined => null
+        payment_type || compraTransformada.metodoPago,
+        status || compraTransformada.estado_transaccion
+      );
+    }
   }
 
-  function buscarPorExternalReference(reservaId: string | null) {
+  function buscarPorExternalReference(reservaId: string | null, status?: string | null, payment_type?: string | null, payment_id?: string | null) {
     if (!reservaId || reservaId === 'null') {
       setLoading(false);
       return;
@@ -151,7 +170,7 @@ export default function ExitoCompraPage() {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.reserva) {
-          transformarYSetCompra(data.reserva);
+          transformarYSetCompra(data.reserva, status, payment_type, payment_id);
         } else {
           setLoading(false);
         }
