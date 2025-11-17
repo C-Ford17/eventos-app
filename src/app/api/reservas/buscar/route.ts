@@ -15,22 +15,23 @@ export async function GET(req: Request) {
       );
     }
 
-    // Busca el pago registrado con ese ID externo y retorna la reserva asociada
+    // IMPORTANTE: findUnique si usas un identificador único  
     const pago = await prisma.pago.findFirst({
-      where: {
-        referencia_externa: mp_collection_id, // O cambia esto según cómo se almacene tu referencia.
-      },
-      include: {
-        reserva: {
-          include: {
-            evento: true,
-            asistente: { select: { id: true, nombre: true, email: true } },
-            credencialesAcceso: true,
-            pagos: true,
-          },
+        where: {
+            referencia_externa: mp_collection_id, // Campo donde guardas el payment_id de MercadoPago
         },
-      },
-    });
+        include: {
+            reserva: {
+            include: {
+                evento: true,
+                asistente: { select: { id: true, nombre: true, email: true } },
+                credencialesAcceso: true,
+                pagos: true,
+            },
+            },
+        },
+        });
+
 
     if (!pago || !pago.reserva) {
       return NextResponse.json(
