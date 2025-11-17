@@ -1,6 +1,6 @@
-// src/app/api/generar-qr/route.ts
 import { NextResponse } from 'next/server';
-import { generarQR, generarHashValidacion, type QRData } from '@/lib/qr';
+import QRCode from 'qrcode';
+import { generarHashValidacion } from '@/lib/qr';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
@@ -17,28 +17,26 @@ export async function POST(req: Request) {
 
     // Genera un ID único para la reserva
     const reservaId = uuidv4();
-    
-    // Genera el hash de validación
+
+    // Genera el hash de validación (si lo necesitas para backend)
     const hash = generarHashValidacion(reservaId, usuarioId);
 
-    // Prepara los datos del QR
-    const qrData: QRData = {
-      reservaId,
-      eventoId,
-      usuarioId,
-      fecha: new Date().toISOString(),
-      tipo: entradas.map((e: any) => e.nombre).join(', '),
-      hash,
-    };
-
-    // Genera el código QR
-    const qrDataURL = await generarQR(qrData);
+    // Ahora el QR es solo el UUID (string plano)
+    const qrString = reservaId;
+    const qrDataURL = await QRCode.toDataURL(qrString, {
+      width: 400,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+    });
 
     return NextResponse.json({
       success: true,
       reservaId,
       qrDataURL,
-      qrData,
+      qrData: qrString,  // QR es UUID plano
     });
   } catch (error: any) {
     console.error('Error generando QR:', error);

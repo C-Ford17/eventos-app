@@ -1,4 +1,3 @@
-// src/app/api/reservas/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -7,10 +6,10 @@ const prisma = new PrismaClient();
 // GET - Obtener detalles de una reserva
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> } // ← CAMBIO
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ← CAMBIO: await
+    const { id } = await context.params;
 
     const reserva = await prisma.reserva.findUnique({
       where: { id },
@@ -45,15 +44,8 @@ export async function GET(
       );
     }
 
-    // Parsea qr_data si existe
-    let qrData = null;
-    if (reserva.qr_data) {
-      try {
-        qrData = JSON.parse(reserva.qr_data);
-      } catch (e) {
-        console.error('Error parseando qr_data:', e);
-      }
-    }
+    // Ya NO parseamos qr_data. Es un string simple, úsalo como está
+    const qrData = reserva.qr_data || null;
 
     return NextResponse.json({
       success: true,
@@ -74,10 +66,10 @@ export async function GET(
 // PUT - Actualizar estado de reserva
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> } // ← CAMBIO
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // ← CAMBIO: await
+    const { id } = await context.params;
     const body = await req.json();
     const { estado_reserva, usuario_id } = body;
 

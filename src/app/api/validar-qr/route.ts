@@ -1,6 +1,5 @@
-// src/app/api/validar-qr/route.ts
 import { NextResponse } from 'next/server';
-import { validarHash, type QRData } from '@/lib/qr';
+import { validarHash } from '@/lib/qr';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -8,7 +7,7 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { qrData, staff_id } = body;
+    const { qrData, staff_id, evento_id } = body;
 
     console.log('=== INICIO VALIDACIÓN QR ===');
     console.log('📥 Body recibido:', body);
@@ -23,58 +22,7 @@ export async function POST(req: Request) {
       );
     }
 
-    let parsedData: QRData;
-    
-    // ✅ Intentar parsear múltiples veces si es necesario
-    if (typeof qrData === 'string') {
-      try {
-        // Primer intento de parseo
-        const firstParse = JSON.parse(qrData);
-        
-        // Si el resultado es un string, parsear de nuevo (doble stringify)
-        if (typeof firstParse === 'string') {
-          parsedData = JSON.parse(firstParse);
-          console.log('✅ QR parseado dos veces (era string doble):', parsedData);
-        } else {
-          parsedData = firstParse;
-          console.log('✅ QR parseado correctamente:', parsedData);
-        }
-      } catch (e) {
-        console.error('❌ Error parseando QR string:', e);
-        console.error('Valor recibido:', qrData);
-        
-        // Intentar como objeto directo
-        try {
-          parsedData = qrData as any;
-          console.log('⚠️ Usando qrData como está:', parsedData);
-        } catch {
-          return NextResponse.json(
-            { success: false, error: 'Código QR inválido - formato JSON incorrecto' },
-            { status: 400 }
-          );
-        }
-      }
-    } else {
-      parsedData = qrData;
-      console.log('✅ QR ya es objeto:', parsedData);
-    }
-
-    const { reservaId, usuarioId, hash, eventoId } = parsedData;
-
-    console.log('🔍 Datos extraídos:', {
-      reservaId,
-      usuarioId,
-      hash,
-      eventoId,
-    });
-
-    if (!reservaId || !usuarioId || !hash || !eventoId) {
-      console.error('❌ Faltan campos en el QR:', parsedData);
-      return NextResponse.json(
-        { success: false, error: 'Código QR incompleto' },
-        { status: 400 }
-      );
-    }
+    const reservaId = qrData; // ahora qrData es UUID simple (string)
 
     // Busca la reserva en la BD
     console.log('🔎 Buscando reserva:', reservaId);
@@ -111,10 +59,10 @@ export async function POST(req: Request) {
     });
 
     // Verifica que el evento coincida
-    if (reserva.evento_id !== eventoId) {
+    if (reserva.evento_id !== evento_id) {
       console.error('❌ Evento no coincide:', {
         esperado: reserva.evento_id,
-        recibido: eventoId,
+        recibido: evento_id,
       });
       return NextResponse.json(
         {
@@ -139,30 +87,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verifica el hash de seguridad
-    console.log('🔐 Verificando hash...');
-    const hashValido = validarHash(reservaId, usuarioId, hash);
-    console.log('Hash válido:', hashValido);
-    
-    if (!hashValido) {
-      console.error('❌ Hash inválido:', {
-        reservaId,
-        usuarioId,
-        hashRecibido: hash,
-      });
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Código QR inválido o falsificado',
-          tipo: 'invalido',
-        },
-        { status: 400 }
-      );
-    }
+    // No se verifica hash porque no está en QR simple; si quieres seguridad, haz en lógica separada
 
     // Verifica si ya fue validado
     const credencial = reserva.credencialesAcceso[0];
-    
+
     if (!credencial) {
       console.error('❌ No hay credencial asociada');
       return NextResponse.json(
@@ -213,7 +142,7 @@ export async function POST(req: Request) {
             registro_id: credencial.id,
             detalles: JSON.stringify({
               reserva_id: reservaId,
-              evento_id: eventoId,
+              evento_id,
               asistente: reserva.asistente.nombre,
             }),
           },
@@ -231,7 +160,7 @@ export async function POST(req: Request) {
       message: 'Entrada validada correctamente',
       data: {
         reservaId,
-        eventoId,
+        eventoId: evento_id,
         asistente: reserva.asistente.nombre,
         cantidad_boletos: reserva.cantidad_boletos,
         fecha_validacion: resultado.fecha_validacion,
