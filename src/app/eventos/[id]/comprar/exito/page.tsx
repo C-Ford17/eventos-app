@@ -15,25 +15,56 @@ export default function ExitoCompraPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // SIEMPRE da prioridad a buscar por collection_id de query
-    const collection_id = searchParams.get('collection_id');
-    if (collection_id) {
-      fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
-        .then(res => res.json())
-        .then(data => {
-          setCompra(data.reserva || null);
+  const collection_id = searchParams.get('collection_id');
+  const external_reference = searchParams.get('external_reference');
+
+  // Prioridad 1: Buscar por collection_id si existe y no es "null"
+  if (collection_id && collection_id !== 'null') {
+    fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.reserva) {
+          setCompra(data.reserva);
           setLoading(false);
-        })
-        .catch(() => setLoading(false));
-      return;
-    }
-    // Si no hay parámetro de MP, busca en localStorage (flujo clásico)
-    const compraStr = localStorage.getItem('ultimaCompra');
-    if (compraStr) {
-      setCompra(JSON.parse(compraStr));
-    }
+        } else {
+          // Si no encuentra por collection_id, intenta por external_reference
+          buscarPorExternalReference(external_reference);
+        }
+      })
+      .catch(() => buscarPorExternalReference(external_reference));
+    return;
+  }
+
+  // Prioridad 2: Si no hay collection_id válido, busca por external_reference (reservaId)
+  if (external_reference && external_reference !== 'null') {
+    buscarPorExternalReference(external_reference);
+    return;
+  }
+
+  // Prioridad 3: Fallback a localStorage
+  const compraStr = localStorage.getItem('ultimaCompra');
+  if (compraStr) {
+    setCompra(JSON.parse(compraStr));
+  }
+  setLoading(false);
+}, [searchParams]);
+
+function buscarPorExternalReference(reservaId: string | null) {
+  if (!reservaId || reservaId === 'null') {
     setLoading(false);
-  }, [eventoId, searchParams]);
+    return;
+  }
+  
+  fetch(`/api/reservas/${reservaId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        setCompra(data.reserva);
+      }
+      setLoading(false);
+    })
+    .catch(() => setLoading(false));
+}
 
   const handleDescargarImagen = () => {
     if (compra?.qrDataURL) {
