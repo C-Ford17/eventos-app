@@ -120,48 +120,47 @@ export default function ExitoCompraPage() {
   }, [compra]);
 
   function transformarYSetCompra(reserva: any, status?: string | null, payment_type?: string | null, payment_id?: string | null) {
-    const rawQR = reserva.qr_data || reserva.id;
-    const dataUrl = rawQR && rawQR.startsWith('data:image') ? rawQR : null;
+  const rawQR = reserva.qr_data || reserva.id;
+  const dataUrl = rawQR && rawQR.startsWith('data:image') ? rawQR : null;
 
-    // Usa entradas tal cual viene desde backend (agrupadas y con precios)
-    const entradas = reserva.entradas || [{
-      nombre: 'General',
-      cantidad: reserva.cantidad_boletos || 1,
-      precio: reserva.precio_total / (reserva.cantidad_boletos || 1)
-    }];
+  // Usar entradas directamente desde backend (ya vienen agrupadas)
+  const entradas = reserva.entradas || [{
+    nombre: 'General',
+    cantidad: reserva.cantidad_boletos || 1,
+    precio: 0
+  }];
 
-    setCompra({
-      reservaId: reserva.id,
-      evento: {
-        nombre: reserva.evento?.nombre || 'Evento',
-        fecha: reserva.evento?.fecha_inicio || '',
-        lugar: reserva.evento?.ubicacion || '',
-      },
-      entradas,
-      numeroOrden: reserva.numero_orden || `orden-${Math.floor(Math.random() * 1000000)}`,
-      fechaCompra: reserva.fecha_reserva || (new Date()).toISOString(),
-      total: reserva.precio_total || 0,
-      subtotal: reserva.subtotal || reserva.precio_total || 0,
-      cargoServicio: reserva.cargo_servicio || 0,
-      metodoPago: reserva.metodo_pago || payment_type || 'Pendiente',
-      qrDataURL: dataUrl,
-      qrString: !dataUrl ? rawQR : null,
-      estado_transaccion: reserva.pagos?.[0]?.estado_transaccion || null,
-    });
+  setCompra({
+    reservaId: reserva.id,
+    evento: {
+      nombre: reserva.evento?.nombre || 'Evento',
+      fecha: reserva.evento?.fecha_inicio || '',
+      lugar: reserva.evento?.ubicacion || '',
+    },
+    entradas,
+    numeroOrden: reserva.numero_orden, // Ahora siempre existe
+    fechaCompra: reserva.fecha_reserva || new Date().toISOString(),
+    total: Number(reserva.precio_total) || 0,
+    subtotal: Number(reserva.subtotal) || Number(reserva.precio_total) || 0,
+    cargoServicio: Number(reserva.cargo_servicio) || 0,
+    metodoPago: reserva.metodo_pago || payment_type || 'Pendiente',
+    qrDataURL: dataUrl,
+    qrString: !dataUrl ? rawQR : null,
+    estado_transaccion: reserva.pagos?.[0]?.estado_transaccion || null,
+  });
 
-    setLoading(false);
+  setLoading(false);
 
-    // Confirmar reserva si aplica
-    if ((status === 'approved' || reserva.pagos?.[0]?.estado_transaccion === 'approved') && reserva.id) {
-      marcarReservaComoConfirmada(
-        reserva.id,
-        payment_id ?? null,
-        payment_type || reserva.metodo_pago,
-        status || reserva.pagos?.[0]?.estado_transaccion,
-      );
-    }
+  // Confirmar reserva si aplica
+  if ((status === 'approved' || reserva.pagos?.[0]?.estado_transaccion === 'approved') && reserva.id) {
+    marcarReservaComoConfirmada(
+      reserva.id,
+      payment_id ?? null,
+      payment_type || reserva.metodo_pago,
+      status || reserva.pagos?.[0]?.estado_transaccion,
+    );
   }
-
+}
 
 
 
@@ -189,32 +188,23 @@ export default function ExitoCompraPage() {
   };
 
   const handleDescargarPDF = () => {
-    if (compra && compra.qrDataURL) {
-      // Garantizar entradas con cantidad y nombre correcto
-      const entradas = compra.entradas && compra.entradas.length > 0
-        ? compra.entradas
-        : [{ nombre: 'Entrada General', cantidad: 1, precio: compra.total || 0 }];
-
-      // Convertir numeroOrden a número si es posible
-      const numeroOrden = compra.numeroOrden ? Number(compra.numeroOrden) : Math.floor(Math.random() * 1000000);
-
-      // Llamada final
-      generarPDFBoleto({
-        evento: {
-          nombre: compra.evento?.nombre || 'Evento',
-          fecha: compra.evento?.fecha || compra.evento?.fecha_inicio || new Date().toISOString(),
-          lugar: compra.evento?.lugar || compra.evento?.ubicacion || 'Ubicación no disponible',
-        },
-        entradas: entradas,
-        numeroOrden: numeroOrden,
-        reservaId: compra.reservaId || 'sin-id',
-        fechaCompra: compra.fechaCompra || new Date().toISOString(),
-        total: Number(compra.total) || 0,
-        qrDataURL: compra.qrDataURL,
-        metodoPago: compra.metodoPago || 'Desconocido',
-      });
-    }
-  };
+  if (compra && compra.qrDataURL) {
+    generarPDFBoleto({
+      evento: {
+        nombre: compra.evento?.nombre || 'Evento',
+        fecha: compra.evento?.fecha || compra.evento?.fecha_inicio || new Date().toISOString(),
+        lugar: compra.evento?.lugar || compra.evento?.ubicacion || 'Ubicación no disponible',
+      },
+      entradas: compra.entradas, // Ya vienen correctas del backend
+      numeroOrden: compra.numeroOrden,
+      reservaId: compra.reservaId || 'sin-id',
+      fechaCompra: compra.fechaCompra || new Date().toISOString(),
+      total: Number(compra.total) || 0,
+      qrDataURL: compra.qrDataURL,
+      metodoPago: compra.metodoPago || 'Desconocido',
+    });
+  }
+};
 
 
   

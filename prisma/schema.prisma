@@ -71,7 +71,7 @@ model Reserva {
   id               String   @id @default(uuid())
   evento_id        String
   asistente_id     String
-  tipo_entrada_id  String? // ← AGREGA ESTA LÍNEA (si no estaba)
+  tipo_entrada_id  String? // Relación con TipoEntrada
   cantidad_boletos Int
   precio_total     Decimal  @db.Decimal(10, 2)
   metodo_pago      String
@@ -79,11 +79,12 @@ model Reserva {
   fecha_reserva    DateTime @default(now())
   qr_data          String?  @db.Text
   qr_hash          String?
+  numero_orden     String?  // AGREGA ESTE CAMPO para el número de orden
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   evento             Evento             @relation(fields: [evento_id], references: [id])
-  tipoEntrada        TipoEntrada?       @relation(fields: [tipo_entrada_id], references: [id]) // ← AGREGA ESTA LÍNEA
+  tipoEntrada        TipoEntrada?       @relation(fields: [tipo_entrada_id], references: [id])
   asistente          Usuario            @relation("AsistenteReservas", fields: [asistente_id], references: [id])
   credencialesAcceso CredencialAcceso[]
   pagos              Pago[]
@@ -99,12 +100,15 @@ model CredencialAcceso {
   codigo_qr         String    @unique
   estado_validacion String    @default("pendiente")
   fecha_validacion  DateTime?
+  tipo_entrada_id   String?   // AGREGA ESTE CAMPO
   createdAt         DateTime  @default(now()) @map("created_at")
 
-  reserva Reserva @relation(fields: [reserva_id], references: [id])
+  reserva    Reserva     @relation(fields: [reserva_id], references: [id])
+  tipoEntrada TipoEntrada? @relation(fields: [tipo_entrada_id], references: [id])
 
   @@map("credenciales_acceso")
 }
+
 
 // PAGOS
 model Pago {
@@ -217,16 +221,18 @@ model Auditoria {
   @@map("auditorias")
 }
 
+// TIPOS DE ENTRADA
 model TipoEntrada {
   id         String   @id @default(uuid())
   evento_id  String
-  nombre     String
+  nombre     String   // Ej: "Degustación Premium", "General"
   precio     Decimal  @db.Decimal(10, 2)
   disponible Boolean  @default(true)
   createdAt  DateTime @default(now())
 
   evento   Evento    @relation(fields: [evento_id], references: [id], onDelete: Cascade)
   reservas Reserva[]
+  credencialesAcceso CredencialAcceso[]
 
   @@map("tipos_entrada")
 }

@@ -45,27 +45,30 @@ export default function BoletaQRPage() {
   };
 
   const handleDescargarPDF = () => {
-    if (reserva && qrDataURL) {
-      generarPDFBoleto({
-        evento: {
-          nombre: reserva.evento.nombre,
-          fecha: reserva.evento.fecha_inicio,
-          lugar: reserva.evento.ubicacion,
-        },
-        entradas: [{
-          nombre: reserva.tipo_entrada,
-          cantidad: reserva.cantidad_boletos,
-          precio: parseFloat(reserva.precio_total) / reserva.cantidad_boletos,
-        }],
-        numeroOrden: reserva.numero_orden || Math.floor(Math.random() * 1000000),
-        reservaId: reserva.id,
-        fechaCompra: reserva.fecha_reserva,
-        total: parseFloat(reserva.precio_total),
-        qrDataURL: qrDataURL,
-        metodoPago: reserva.metodo_pago || 'Tarjeta',
-      });
-    }
-  };
+  if (reserva && qrDataURL) {
+    // Usar entradas del backend si existen, sino crear fallback
+    const entradas = reserva.entradas || [{
+      nombre: 'General',
+      cantidad: reserva.cantidad_boletos,
+      precio: parseFloat(reserva.precio_total) / reserva.cantidad_boletos,
+    }];
+
+    generarPDFBoleto({
+      evento: {
+        nombre: reserva.evento.nombre,
+        fecha: reserva.evento.fecha_inicio,
+        lugar: reserva.evento.ubicacion,
+      },
+      entradas: entradas,
+      numeroOrden: reserva.numero_orden,
+      reservaId: reserva.id,
+      fechaCompra: reserva.fecha_reserva,
+      total: parseFloat(reserva.precio_total),
+      qrDataURL: qrDataURL,
+      metodoPago: reserva.metodo_pago || 'Tarjeta',
+    });
+  }
+};
 
   if (loading) {
     return (

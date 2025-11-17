@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Función para agrupar entradas en backend (puede ir dentro del handler GET)
+// Función para agrupar entradas en backend
 function agruparEntradas(credenciales: any[], cantidadBoletos: number) {
   if (!credenciales || credenciales.length === 0) {
     return [{
@@ -12,19 +12,28 @@ function agruparEntradas(credenciales: any[], cantidadBoletos: number) {
       precio: 0,
     }];
   }
-  const mapEntradas = new Map<string, { nombre: string, cantidad: number }>();
+
+  const mapEntradas = new Map<string, { nombre: string; cantidad: number; precio: number }>();
+  
   credenciales.forEach(c => {
-    const tipo = c.tipo_entrada || 'General';
-    if (mapEntradas.has(tipo)) {
-      mapEntradas.get(tipo)!.cantidad++;
+    // Ahora c.tipoEntrada existe porque incluimos la relación
+    const tipoNombre = c.tipoEntrada?.nombre || 'General';
+    const precio = c.tipoEntrada?.precio ? Number(c.tipoEntrada.precio) : 0;
+    
+    if (mapEntradas.has(tipoNombre)) {
+      mapEntradas.get(tipoNombre)!.cantidad++;
     } else {
-      mapEntradas.set(tipo, { nombre: tipo, cantidad: 1 });
+      mapEntradas.set(tipoNombre, { 
+        nombre: tipoNombre, 
+        cantidad: 1,
+        precio: precio
+      });
     }
   });
+
   return Array.from(mapEntradas.values());
 }
 
-// GET - Obtener detalles de una reserva
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
@@ -50,8 +59,14 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
             email: true,
           },
         },
-        credencialesAcceso: true,
+        // IMPORTANTE: Incluir tipoEntrada dentro de credencialesAcceso
+        credencialesAcceso: {
+          include: {
+            tipoEntrada: true
+          }
+        },
         pagos: true,
+        tipoEntrada: true, // Incluir también el tipo de entrada principal de la reserva
       },
     });
 
@@ -59,19 +74,19 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
       return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
     }
 
-    // Agrupar entradas con cantidades
+    // Agrupar entradas con cantidades y precios
     const entradasAgrupadas = agruparEntradas(reserva.credencialesAcceso, reserva.cantidad_boletos);
-    const precioUnitario = reserva.cantidad_boletos ? Number(reserva.precio_total) / reserva.cantidad_boletos : Number(reserva.precio_total);
+    
+    // Generar número de orden si no existe
+    const numeroOrden = reserva.numero_orden || `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-    // Añadir precio unitario a cada entrada agrupada
-    const entradas = entradasAgrupadas.map(e => ({ ...e, precio: precioUnitario }));
-
-    // Construir la respuesta con nuevas entradas
+    // Construir la respuesta con entradas agrupadas
     return NextResponse.json({
       success: true,
       reserva: {
         ...reserva,
-        entradas,
+        entradas: entradasAgrupadas, // Enviar entradas agrupadas directamente
+        numero_orden: numeroOrden,   // Asegurar que existe
         qrData: reserva.qr_data || null,
       },
     });
