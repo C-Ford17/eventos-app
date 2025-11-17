@@ -114,23 +114,36 @@ export default function ExitoCompraPage() {
               </div>
 
               <div>
-                <p className="text-gray-400 text-sm">Fecha y Hora</p>
-                <p className="text-white">
-                  {new Date(compra.evento.fecha).toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}, {new Date(compra.evento.fecha).toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+                {/* Fecha y hora */}
+                <p className="text-gray-400 text-sm">Fecha</p>
+                  <p className="text-white">
+                    {compra.evento.fecha_inicio || compra.evento.fecha
+                      ? (
+                        <>
+                          {new Date(compra.evento.fecha_inicio || compra.evento.fecha).toLocaleDateString('es-ES', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                          , {new Date(compra.evento.fecha_inicio || compra.evento.fecha).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </>
+                      ) : (
+                        "Fecha no disponible"
+                      )
+                    }
+                  </p>
               </div>
 
               <div>
-                <p className="text-gray-400 text-sm">Lugar</p>
-                <p className="text-white">{compra.evento.lugar}</p>
+                {/* Ubicacion */}
+                <p className="text-gray-400 text-sm">Ubicacion</p>
+                <p className="text-white">
+                  {compra.evento.ubicacion || compra.evento.lugar || "Lugar no disponible"}
+                </p>
               </div>
 
               <div className="border-t border-neutral-700 pt-3">
