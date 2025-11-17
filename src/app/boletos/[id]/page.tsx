@@ -47,11 +47,15 @@ export default function BoletaQRPage() {
   const handleDescargarPDF = () => {
   if (reserva && qrDataURL) {
     // Usar entradas del backend si existen, sino crear fallback
+
     const entradas = reserva.entradas || [{
       nombre: 'General',
       cantidad: reserva.cantidad_boletos,
       precio: parseFloat(reserva.precio_total) / reserva.cantidad_boletos,
     }];
+    console.log("Reserva recibida:", JSON.stringify(reserva, null, 2));
+    console.log("Entradas agrupadas:", JSON.stringify(entradas, null, 2));
+
 
     generarPDFBoleto({
       evento: {

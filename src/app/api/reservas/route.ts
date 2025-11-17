@@ -37,8 +37,13 @@ export async function GET(req: Request) {
             },
           },
         },
-        credencialesAcceso: true,
+        credencialesAcceso: {
+          include: {
+            tipoEntrada: true
+          }
+        },
         pagos: true,
+        tipoEntrada: true, // Incluir tipo de entrada principal
       },
       orderBy: {
         fecha_reserva: 'desc',
@@ -70,12 +75,13 @@ export async function POST(req: Request) {
       subtotal,
       cargo_servicio,
       total,
+      tipo_entrada_id, // <-- NUEVO CAMPO
     } = body;
 
-    // Validaciones
-    if (!evento_id || !usuario_id || !cantidad_boletos || !metodo_pago || !total) {
+    // Validaciones - AHORA INCLUYE tipo_entrada_id
+    if (!evento_id || !usuario_id || !cantidad_boletos || !metodo_pago || !total || !tipo_entrada_id) {
       return NextResponse.json(
-        { error: 'Todos los campos son requeridos' },
+        { error: 'Todos los campos son requeridos, incluyendo tipo_entrada_id' },
         { status: 400 }
       );
     }
@@ -102,6 +108,18 @@ export async function POST(req: Request) {
     if (evento.estado !== 'programado') {
       return NextResponse.json(
         { error: 'El evento no está disponible para reservas' },
+        { status: 400 }
+      );
+    }
+
+    // Verifica que el tipo de entrada existe y pertenece al evento
+    const tipoEntrada = await prisma.tipoEntrada.findUnique({
+      where: { id: tipo_entrada_id },
+    });
+
+    if (!tipoEntrada || tipoEntrada.evento_id !== evento_id) {
+      return NextResponse.json(
+        { error: 'Tipo de entrada no válido para este evento' },
         { status: 400 }
       );
     }
@@ -136,17 +154,64 @@ export async function POST(req: Request) {
     }
 
     // Genera número de orden único
-    const numeroOrden = Math.floor(Math.random() * 1000000);
+    const numeroOrden = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
     // Genera ID único para la reserva
     const reservaId = uuidv4();
 
-    // Genera hash para uso interno (si se requiere)
+    // Genera hash para uso interno
     const hash = generarHashValidacion(reservaId, usuario_id);
 
-    // Genera código QR con solo el UUID
-    const qrString = reservaId;
-    const qrDataURL = await QRCode.toDataURL(qrString, {
+    // Inicia transacción
+    const resultado = await prisma.$transaction(async (tx) => {
+      // CREAR LA RESERVA CON tipo_entrada_id
+      const reserva = await tx.reserva.create({
+        data: {
+          id: reservaId,
+          evento_id,
+          asistente_id: usuario_id,
+          tipo_entrada_id: tipo_entrada_id, // <-- GUARDAR TIPO DE ENTRADA
+          cantidad_boletos: parseInt(cantidad_boletos),
+          precio_total: parseFloat(total),
+          metodo_pago,
+          estado_reserva: 'pendiente',
+          fecha_reserva: new Date(),
+          qr_data: reservaId,
+          qr_hash: hash,
+          numero_orden: numeroOrden, // <-- GUARDAR NÚMERO DE ORDEN
+        },
+      });
+
+      // CREAR TANTAS CREDENCIALES COMO BOLETOS, CADA UNA CON tipo_entrada_id
+      const credenciales = [];
+      for (let i = 0; i < parseInt(cantidad_boletos); i++) {
+        const credencial = await tx.credencialAcceso.create({
+          data: {
+            reserva_id: reserva.id,
+            codigo_qr: `${reservaId}-${i}`, // QR único por boleto
+            estado_validacion: 'pendiente',
+            tipo_entrada_id: tipo_entrada_id, // <-- ASIGNAR TIPO A CADA CREDENCIAL
+          },
+        });
+        credenciales.push(credencial);
+      }
+
+      // Registra el pago
+      const pago = await tx.pago.create({
+        data: {
+          reserva_id: reserva.id,
+          monto: parseFloat(total),
+          metodo_pago,
+          estado_transaccion: 'pendiente', // Cambiar a 'completada' después de confirmar pago
+          referencia_externa: `PAY-${numeroOrden}`,
+        },
+      });
+
+      return { reserva, credenciales, pago };
+    });
+
+    // Genera código QR con el ID de reserva
+    const qrDataURL = await QRCode.toDataURL(reservaId, {
       width: 400,
       margin: 2,
       color: {
@@ -155,55 +220,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // Inicia transacción
-    const resultado = await prisma.$transaction(async (tx) => {
-      const reserva = await tx.reserva.create({
-        data: {
-          id: reservaId,
-          evento_id,
-          asistente_id: usuario_id,
-          cantidad_boletos: parseInt(cantidad_boletos),
-          precio_total: parseFloat(total),
-          metodo_pago,
-          estado_reserva: 'pendiente',  // <--- Aquí cambia el estado
-          fecha_reserva: new Date(),
-          qr_data: qrString,
-          qr_hash: hash,
-        },
-      });
-
-      // Crea la credencial de acceso (QR)
-      const credencial = await tx.credencialAcceso.create({
-        data: {
-          reserva_id: reserva.id,
-          codigo_qr: reservaId,
-          estado_validacion: 'pendiente',
-        },
-      });
-
-      // Registra el pago
-      const pago = await tx.pago.create({
-        data: {
-          reserva_id: reserva.id,
-          monto: parseFloat(total),
-          metodo_pago,
-          estado_transaccion: 'completada',
-          referencia_externa: `PAY-${numeroOrden}`,
-        },
-      });
-
-      return { reserva, credencial, pago };
-    });
-
     return NextResponse.json(
       {
         success: true,
         message: 'Reserva creada exitosamente',
         reserva: {
           ...resultado.reserva,
-          numeroOrden,
+          numero_orden: numeroOrden,
           qrDataURL,
-          qrData: qrString,
+          qrData: reservaId,
+          credencialesAcceso: resultado.credenciales, // Incluir credenciales creadas
         },
       },
       { status: 201 }
