@@ -33,11 +33,12 @@ export default function OrganizadorPanel() {
           // Calcular estadísticas
           const activos = misEventos.filter((e: any) => e.estado === 'programado').length;
           const totalReservas = misEventos.reduce(
-            (sum: number, e: any) => sum + (e.reservas || 0), 
+            (sum: number, e: any) => sum + (e.boletos_vendidos ?? 0), 
             0
           );
+
           const totalIngresos = misEventos.reduce(
-            (sum: number, e: any) => sum + (e.reservas || 0) * 50000, // Aproximado
+            (sum: number, e: any) => sum + (e.boletos_vendidos ?? 0) * 50000, // o el cálculo real si tienes precio unitario
             0
           );
 
@@ -173,7 +174,7 @@ export default function OrganizadorPanel() {
                 <div>
                   <p className="text-white font-medium">{evento.nombre}</p>
                   <p className="text-gray-400 text-sm">
-                    {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')} • {evento.reservas || 0} reservas
+                    {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')} • {evento.boletos_vendidos ?? 0} reservas
                   </p>
                 </div>
                 <span className={`px-3 py-1 text-white text-xs rounded-full ${
