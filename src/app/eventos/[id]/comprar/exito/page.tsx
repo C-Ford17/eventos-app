@@ -127,22 +127,20 @@ export default function ExitoCompraPage() {
     const compraTransformada = {
       reservaId: reserva.id,
       evento: {
-        nombre: reserva.evento.nombre,
-        fecha: reserva.evento.fecha_inicio,
-        lugar: reserva.evento.ubicacion,
+        nombre: reserva.evento?.nombre || 'Evento',
+        fecha: reserva.evento?.fecha_inicio || '',
+        lugar: reserva.evento?.ubicacion || '',
       },
       entradas: reserva.credencialesAcceso?.map((c: any) => ({
-        nombre: c.tipo_entrada,
+        nombre: c.tipo_entrada || 'Entrada General',
         cantidad: 1,
         precio: precioUnitario,
-      })) || [
-        {
-          nombre: 'General',
-          cantidad: reserva.cantidad_boletos || 1,
-          precio: precioUnitario,
-        }
-      ],
-      numeroOrden: reserva.numero_orden,
+      })) || [{
+        nombre: 'General',
+        cantidad: reserva.cantidad_boletos || 1,
+        precio: precioUnitario,
+      }],
+      numeroOrden: reserva.numero_orden || `orden-${Math.floor(Math.random() * 1000000)}`,
       fechaCompra: reserva.fecha_reserva,
       total: reserva.precio_total,
       subtotal: reserva.subtotal || reserva.precio_total,
@@ -193,19 +191,29 @@ export default function ExitoCompraPage() {
   };
 
   const handleDescargarPDF = () => {
-    if (compra && compra.qrDataURL) {
-      generarPDFBoleto({
-        evento: compra.evento,
-        entradas: compra.entradas,
-        numeroOrden: compra.numeroOrden,
-        reservaId: compra.reservaId,
-        fechaCompra: compra.fechaCompra,
-        total: compra.total,
-        qrDataURL: compra.qrDataURL,
-        metodoPago: compra.metodoPago,
-      });
-    }
-  };
+  if (compra && compra.qrDataURL) {
+    generarPDFBoleto({
+      evento: {
+        nombre: compra.evento?.nombre || 'Evento',
+        fecha: compra.evento?.fecha || compra.evento?.fecha_inicio || new Date().toISOString(),
+        lugar: compra.evento?.lugar || compra.evento?.ubicacion || 'Ubicación no disponible',
+      },
+      entradas: compra.entradas?.length > 0 ? compra.entradas : [{
+        nombre: 'Entrada General',
+        cantidad: 1,
+        precio: compra.total || 0,
+      }],
+      numeroOrden: compra.numeroOrden ? Number(compra.numeroOrden) : Math.floor(Math.random() * 1000000),
+      reservaId: compra.reservaId || 'sin-id',
+      fechaCompra: compra.fechaCompra || new Date().toISOString(),
+      total: Number(compra.total) || 0,
+      qrDataURL: compra.qrDataURL,
+      metodoPago: compra.metodoPago || 'Desconocido',
+    });
+  }
+};
+
+  
 
   const handleAgregarCalendario = () => {
     if (!compra) return;
