@@ -10,14 +10,14 @@ datasource db {
 
 // USUARIOS
 model Usuario {
-  id           String   @id @default(uuid())
-  nombre       String
-  email        String   @unique
-  password     String
-  tipo_usuario String
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  telefono     String?  // ✅ AGREGAR ESTA LÍNEA (opcional)
+  id                 String             @id @default(uuid())
+  nombre             String
+  email              String             @unique
+  password           String
+  tipo_usuario       String
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  telefono           String? // ✅ AGREGAR ESTA LÍNEA (opcional)
   eventosCreados     Evento[]           @relation("OrganizadorEventos")
   reservas           Reserva[]          @relation("AsistenteReservas")
   productosServicios ProductoServicio[] @relation("ProveedorServicios")
@@ -52,7 +52,7 @@ model Evento {
   categoria_id   String
   organizador_id String
   estado         String   @default("programado")
-  imagen_url     String?  // <--- AGREGA ESTA LÍNEA
+  imagen_url     String? // <--- AGREGA ESTA LÍNEA
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -79,7 +79,7 @@ model Reserva {
   fecha_reserva    DateTime @default(now())
   qr_data          String?  @db.Text
   qr_hash          String?
-  numero_orden     String?  // AGREGA ESTE CAMPO para el número de orden
+  numero_orden     String? // AGREGA ESTE CAMPO para el número de orden
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -100,15 +100,14 @@ model CredencialAcceso {
   codigo_qr         String    @unique
   estado_validacion String    @default("pendiente")
   fecha_validacion  DateTime?
-  tipo_entrada_id   String?   // AGREGA ESTE CAMPO
+  tipo_entrada_id   String? // AGREGA ESTE CAMPO
   createdAt         DateTime  @default(now()) @map("created_at")
 
-  reserva    Reserva     @relation(fields: [reserva_id], references: [id])
+  reserva     Reserva      @relation(fields: [reserva_id], references: [id])
   tipoEntrada TipoEntrada? @relation(fields: [tipo_entrada_id], references: [id])
 
   @@map("credenciales_acceso")
 }
-
 
 // PAGOS
 model Pago {
@@ -136,7 +135,7 @@ model Reembolso {
   fecha_solicitud  DateTime  @default(now())
   fecha_procesado  DateTime?
   createdAt        DateTime  @default(now()) @map("created_at")
-  
+
   reserva Reserva @relation(fields: [reserva_id], references: [id])
 
   @@map("reembolsos")
@@ -225,13 +224,13 @@ model Auditoria {
 model TipoEntrada {
   id         String   @id @default(uuid())
   evento_id  String
-  nombre     String   // Ej: "Degustación Premium", "General"
+  nombre     String // Ej: "Degustación Premium", "General"
   precio     Decimal  @db.Decimal(10, 2)
   disponible Boolean  @default(true)
   createdAt  DateTime @default(now())
 
-  evento   Evento    @relation(fields: [evento_id], references: [id], onDelete: Cascade)
-  reservas Reserva[]
+  evento             Evento             @relation(fields: [evento_id], references: [id], onDelete: Cascade)
+  reservas           Reserva[]
   credencialesAcceso CredencialAcceso[]
 
   @@map("tipos_entrada")
