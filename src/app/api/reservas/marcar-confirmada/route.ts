@@ -13,23 +13,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
-    // Actualiza el estado de la reserva según parámetro recibido
+    // Actualiza el estado de la reserva
     const result = await prisma.reserva.update({
-      where: { id: reservaId },
-      data: { 
-        estado_reserva: estado === 'approved' ? 'confirmada' : 'pendiente',
-        pagos: {
-          updateMany: {
-            where: {},
-            data: {
-              referencia_externa: String(paymentId),
-              metodo_pago: metodoPago || 'No especificado',
-              estado_transaccion: estado,
-            }
-          }
-        }
-      },
-      include: { pagos: true }
+    where: { id: reservaId },
+    data: { 
+        estado_reserva: estado === 'approved' ? 'confirmada' : 'pendiente'
+    }
+    });
+
+    // Actualiza todos los pagos asociados a esa reserva
+    await prisma.pago.updateMany({
+    where: { reserva_id: reservaId },
+    data: {
+        referencia_externa: String(paymentId),
+        metodo_pago: metodoPago || 'No especificado',
+        estado_transaccion: estado,
+    }
     });
 
     return NextResponse.json({ success: true, reserva: result });
