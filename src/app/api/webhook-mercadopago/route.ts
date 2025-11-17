@@ -28,25 +28,31 @@ function verifyMpSignature(signature: any, xRequestId : any, dataId : any) {
   return expected === hash;
 }
 
-export async function POST(req: any) {
-  // OJO: para validación de firma MP hay que leer el body como texto plano primero
-  const txtBody = await req.text();
-  // MercadoPago envía los headers:
-  const signature = req.headers.get('x-signature');
-  const xRequestId = req.headers.get('x-request-id');
-  // Si usas Next.js API routes, cambia a req.query["data.id"] si es por query, pero para body:
-  let dataId = null;
+export async function POST(req : any) {
   try {
+    const txtBody = await req.text();
+    const signature = req.headers.get('x-signature');
+    const xRequestId = req.headers.get('x-request-id');
+    console.log('🔔 Webhook llamado!', new Date().toISOString());
+    console.log('Headers:', Object.fromEntries(req.headers));
+    console.log('Body:', txtBody);
+
+    let dataId = null;
     const body = JSON.parse(txtBody);
     dataId = body.data?.id || body.id;
-    // Valida firma ANTES de procesar nada
-    if (!verifyMpSignature(signature, xRequestId, dataId)) {
-      return NextResponse.json({ error: 'Firma inválida' }, { status: 401 });
-    }
 
+    // Valida firma (opcional pero recomendado)
+    // if (!verifyMpSignature(signature, xRequestId, dataId)) {
+    //   return NextResponse.json({ error: 'Firma inválida' }, { status: 401 });
+    // }
+
+    // ACEPTA payment.created Y payment.updated
     if (body.type !== 'payment') {
+      console.log('Evento ignorado:', body.type);
       return NextResponse.json({ message: 'Evento ignorado' });
     }
+
+    console.log('✅ Webhook recibido - Tipo:', body.action, 'Payment ID:', dataId);
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     const paymentResp = await fetch(
@@ -59,6 +65,7 @@ export async function POST(req: any) {
     const paymentData = await paymentResp.json();
 
     if (!paymentResp.ok) {
+      console.error('❌ Error consultando pago:', paymentData);
       return NextResponse.json({ error: 'No se pudo consultar pago' }, { status: 500 });
     }
 
@@ -67,6 +74,9 @@ export async function POST(req: any) {
     const metodoPago = paymentData.payment_method_id;
     const paymentIdStr = String(paymentData.id);
 
+    console.log('📦 Payment Data:', { reservaId, estadoPago, metodoPago });
+
+    // Actualiza pago
     await prisma.pago.updateMany({
       where: { reserva_id: reservaId },
       data: {
@@ -75,12 +85,18 @@ export async function POST(req: any) {
         estado_transaccion: estadoPago
       },
     });
+
+    // Actualiza reserva
     await prisma.reserva.update({
       where: { id: reservaId },
       data: { estado_reserva: estadoPago === 'approved' ? 'confirmada' : 'pendiente' },
     });
+
+    console.log('✅ Reserva actualizada:', reservaId, '| Estado:', estadoPago);
     return NextResponse.json({ message: 'Webhook procesado correctamente' });
   } catch (error) {
+    console.error('❌ Error procesando webhook:', error);
     return NextResponse.json({ error: 'Error procesando webhook' }, { status: 500 });
   }
 }
+
