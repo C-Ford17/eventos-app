@@ -1,4 +1,3 @@
-// src/app/eventos/[id]/comprar/confirmacion/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -7,9 +6,11 @@ export default function ConfirmacionReservaPage() {
   const params = useParams();
   const router = useRouter();
   const eventoId = params.id as string;
+
   const [compra, setCompra] = useState<any>(null);
   const [evento, setEvento] = useState<any>(null);
 
+  // Carga inicial de compra desde localStorage
   useEffect(() => {
     const compraStr = localStorage.getItem('compraActual');
     if (!compraStr) {
@@ -19,16 +20,34 @@ export default function ConfirmacionReservaPage() {
     setCompra(JSON.parse(compraStr));
   }, [eventoId, router]);
 
-  // Opcional: recarga el evento para obtener la imagen actual si compra.evento no la trae
+  // Recarga información del evento si es necesario
   useEffect(() => {
     if (compra && (!compra.evento.imagen_url || !compra.evento.categoria)) {
       fetch(`/api/eventos/${eventoId}`)
         .then(res => res.json())
         .then(data => {
-          if (data.success) setEvento(data.evento);
+          if (data.success) {
+            setEvento(data.evento);
+          }
         });
     }
   }, [compra, eventoId]);
+
+  // Refresca estado real de la reserva desde backend
+  useEffect(() => {
+    if (compra?.reservaId) {
+      fetch(`/api/reservas/${compra.reservaId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setCompra((prev: any) => ({
+              ...prev,
+              estado_reserva: data.reserva.estado_reserva,
+            }));
+          }
+        });
+    }
+  }, [compra?.reservaId]);
 
   const handleEditarSeleccion = () => {
     router.back();
@@ -53,7 +72,6 @@ export default function ConfirmacionReservaPage() {
     );
   }
 
-  // Preferir la info de evento que fue recargada si existe
   const eventoInfo = evento || compra.evento;
 
   return (
@@ -61,10 +79,25 @@ export default function ConfirmacionReservaPage() {
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-white mb-8">Confirma tu reserva</h1>
 
+        {/* Mensajes según estado de reserva */}
+        {compra.estado_reserva === 'pendiente' && (
+          <div className="mb-6 p-4 rounded bg-yellow-600 text-yellow-100 font-semibold">
+            Tu pago está pendiente de confirmación. Completa el pago para asegurar tu reserva.
+          </div>
+        )}
+        {compra.estado_reserva === 'confirmada' && (
+          <div className="mb-6 p-4 rounded bg-green-600 text-green-100 font-semibold">
+            Tu reserva ha sido confirmada. ¡Gracias por tu compra!
+          </div>
+        )}
+        {compra.estado_reserva === 'cancelada' && (
+          <div className="mb-6 p-4 rounded bg-red-600 text-red-100 font-semibold">
+            La reserva fue cancelada. Contacta soporte para mayor información.
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Resumen de la reserva */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Información del evento */}
             <div className="bg-neutral-800 p-6 rounded-lg">
               <div className="flex items-start space-x-4">
                 {eventoInfo.imagen_url ? (
@@ -81,9 +114,7 @@ export default function ConfirmacionReservaPage() {
                   </div>
                 )}
                 <div className="flex-1">
-                  <h2 className="text-2xl font-semibold text-white mb-2">
-                    {eventoInfo.nombre}
-                  </h2>
+                  <h2 className="text-2xl font-semibold text-white mb-2">{eventoInfo.nombre}</h2>
                   <div className="space-y-1 text-gray-300">
                     <p>
                       {new Date(eventoInfo.fecha_inicio || eventoInfo.fecha).toLocaleDateString('es-ES', {
@@ -100,16 +131,13 @@ export default function ConfirmacionReservaPage() {
                     </p>
                     <p>{eventoInfo.ubicacion || eventoInfo.lugar}</p>
                     {eventoInfo?.categoria?.nombre && (
-                      <p className="text-blue-400 text-xs mt-1">
-                        {eventoInfo.categoria.nombre}
-                      </p>
+                      <p className="text-blue-400 text-xs mt-1">{eventoInfo.categoria.nombre}</p>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Entradas seleccionadas */}
             <div className="bg-neutral-800 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4">Entradas Seleccionadas</h3>
               <div className="space-y-4">
@@ -125,9 +153,7 @@ export default function ConfirmacionReservaPage() {
                         <p className="text-white font-medium">
                           {entrada.cantidad}x {entrada.nombre}
                         </p>
-                        <p className="text-gray-400 text-sm">
-                          ${entrada.precio.toLocaleString('es-CO')} cada una
-                        </p>
+                        <p className="text-gray-400 text-sm">${entrada.precio.toLocaleString('es-CO')} cada una</p>
                       </div>
                     </div>
                     <p className="text-white font-semibold">
@@ -137,20 +163,15 @@ export default function ConfirmacionReservaPage() {
                 ))}
               </div>
 
-              <button
-                onClick={handleEditarSeleccion}
-                className="mt-4 text-blue-400 hover:text-blue-300 text-sm"
-              >
+              <button onClick={handleEditarSeleccion} className="mt-4 text-blue-400 hover:text-blue-300 text-sm">
                 Editar selección
               </button>
             </div>
           </div>
 
-          {/* Total a Pagar */}
           <div className="lg:col-span-1">
             <div className="bg-neutral-800 p-6 rounded-lg sticky top-4">
               <h3 className="text-xl font-semibold text-white mb-4">Total a Pagar</h3>
-
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-300">
                   <span>Subtotal</span>
@@ -160,18 +181,18 @@ export default function ConfirmacionReservaPage() {
                   <span>Cargos por servicio</span>
                   <span>COP {compra.cargoServicio.toLocaleString('es-CO')}</span>
                 </div>
-
-                <div className="border-t border-neutral-700 pt-3">
-                  <div className="flex justify-between text-white text-2xl font-bold">
-                    <span>Total</span>
-                    <span>COP {compra.total.toLocaleString('es-CO')}</span>
-                  </div>
+              </div>
+              <div className="border-t border-neutral-700 pt-4">
+                <div className="flex justify-between text-white font-bold text-lg mb-4">
+                  <span>Total</span>
+                  <span>COP {compra.total.toLocaleString('es-CO')}</span>
                 </div>
               </div>
 
               <button
                 onClick={handleConfirmarYPagar}
-                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold mb-3 transition"
+                disabled={compra.estado_reserva === 'confirmada' || compra.estado_reserva === 'cancelada'}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold mb-3 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirmar y Pagar
               </button>
