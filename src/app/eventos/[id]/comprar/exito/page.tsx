@@ -63,13 +63,25 @@ export default function ExitoCompraPage() {
     // Intenta preferir un base64, si no tienes uno toma el código plano y se generará luego el QR
     const rawQR = reserva.credencialesAcceso?.[0]?.codigo_qr || reserva.id;
     const dataUrl = rawQR && rawQR.startsWith('data:image') ? rawQR : null;
+    const precioUnitario = reserva.cantidad_boletos ? reserva.precio_total / reserva.cantidad_boletos : reserva.precio_total;
     const compraTransformada = {
       reservaId: reserva.id,
-      evento: reserva.evento,
-      entradas: reserva.credencialesAcceso?.map((c: any) => ({
+      evento: {
+        nombre: reserva.evento.nombre,
+        fecha: reserva.evento.fecha_inicio,
+        lugar: reserva.evento.ubicacion,
+      },
+      entradas: reserva.credencialesAcceso?.map((c : any) => ({
         nombre: c.tipo_entrada,
         cantidad: 1,
-      })) || [{nombre: 'General', cantidad: reserva.cantidad_boletos}],
+        precio: precioUnitario,
+      })) || [
+        {
+          nombre: 'General',
+          cantidad: reserva.cantidad_boletos || 1,
+          precio: precioUnitario,
+        }
+      ],
       numeroOrden: reserva.numero_orden,
       fechaCompra: reserva.fecha_reserva,
       total: reserva.precio_total,
@@ -77,7 +89,7 @@ export default function ExitoCompraPage() {
       cargoServicio: reserva.cargo_servicio || 0,
       metodoPago: reserva.pagos?.[0]?.metodo_pago || 'Pendiente',
       qrDataURL: dataUrl,
-      qrString: !dataUrl ? rawQR : null, // para generar el QR luego si lo necesitas
+      qrString: !dataUrl ? rawQR : null,
     };
     setCompra(compraTransformada);
     setLoading(false);
