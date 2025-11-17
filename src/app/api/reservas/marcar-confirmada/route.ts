@@ -13,13 +13,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
+    // Actualiza la reserva (estado y método de pago)
     const reservaActualizada = await prisma.reserva.update({
       where: { id: reservaId },
       data: {
-        estado_reserva: estado === 'approved' ? 'confirmada' : 'pendiente'
+        estado_reserva: estado === 'approved' ? 'confirmada' : 'pendiente',
+        metodo_pago: metodoPago || 'No especificado' // ← AGREGA ESTA LÍNEA
       }
     });
 
+    // Actualiza todos los pagos asociados
     const pagosActualizados = await prisma.pago.updateMany({
       where: { reserva_id: reservaId },
       data: {
@@ -29,9 +32,17 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, reserva: reservaActualizada, pagos: pagosActualizados });
+    return NextResponse.json({ 
+      success: true, 
+      reserva: reservaActualizada, 
+      pagos: pagosActualizados 
+    });
   } catch (error : any) {
     console.error("❌ Error marcando confirmada:", error);
-    return NextResponse.json({ error: 'Error al confirmar reserva', details: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Error al confirmar reserva', 
+      details: error.message 
+    }, { status: 500 });
   }
 }
+
