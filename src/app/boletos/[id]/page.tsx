@@ -44,58 +44,28 @@ export default function BoletaQRPage() {
     }
   };
 
-  function agruparEntradas(credenciales: any[], cantidadBoletos: number) {
-    if (!credenciales || credenciales.length === 0) {
-      return [{
-        nombre: 'General',
-        cantidad: cantidadBoletos || 1,
-        precio: 0,
-      }];
-    }
-
-    const mapEntradas = new Map<string, { nombre: string, cantidad: number, precio: number }>();
-
-    credenciales.forEach(c => {
-      const tipo = c.tipo_entrada || 'General';
-      if (!mapEntradas.has(tipo)) {
-        mapEntradas.set(tipo, { nombre: tipo, cantidad: 1, precio: 0 });
-      } else {
-        const entry = mapEntradas.get(tipo)!;
-        entry.cantidad += 1;
-        mapEntradas.set(tipo, entry);
-      }
-    });
-
-    return Array.from(mapEntradas.values());
-  }
-
   const handleDescargarPDF = () => {
     if (reserva && qrDataURL) {
-      const precioUnitario = reserva.cantidad_boletos ? parseFloat(reserva.precio_total) / reserva.cantidad_boletos : parseFloat(reserva.precio_total);
-      
-      const entradasAgrupadas = agruparEntradas(reserva.credencialesAcceso, reserva.cantidad_boletos);
-      const entradasFinal = entradasAgrupadas.map(e => ({
-        ...e,
-        precio: e.precio || precioUnitario,
-      }));
-
       generarPDFBoleto({
         evento: {
           nombre: reserva.evento.nombre,
           fecha: reserva.evento.fecha_inicio,
           lugar: reserva.evento.ubicacion,
         },
-        entradas: entradasFinal,
+        entradas: [{
+          nombre: reserva.tipo_entrada,
+          cantidad: reserva.cantidad_boletos,
+          precio: parseFloat(reserva.precio_total) / reserva.cantidad_boletos,
+        }],
         numeroOrden: reserva.numero_orden || Math.floor(Math.random() * 1000000),
         reservaId: reserva.id,
         fechaCompra: reserva.fecha_reserva,
         total: parseFloat(reserva.precio_total),
         qrDataURL: qrDataURL,
-        metodoPago: reserva.metodo_pago || "Tarjeta",
+        metodoPago: reserva.metodo_pago || 'Tarjeta',
       });
     }
   };
-
 
   if (loading) {
     return (

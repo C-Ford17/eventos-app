@@ -119,52 +119,27 @@ export default function ExitoCompraPage() {
     }
   }, [compra]);
 
-  function agruparEntradas(credenciales: any[], cantidadBoletos: number) {
-    if (!credenciales || credenciales.length === 0) {
-      return [{
-        nombre: 'General',
-        cantidad: cantidadBoletos || 1,
-        precio: 0,
-      }];
-    }
-
-    const mapEntradas = new Map<string, { nombre: string, cantidad: number, precio: number }>();
-
-    credenciales.forEach(c => {
-      const tipo = c.tipo_entrada || 'General';
-      if (!mapEntradas.has(tipo)) {
-        mapEntradas.set(tipo, { nombre: tipo, cantidad: 1, precio: 0 });
-      } else {
-        const entry = mapEntradas.get(tipo)!;
-        entry.cantidad += 1;
-        mapEntradas.set(tipo, entry);
-      }
-    });
-
-    return Array.from(mapEntradas.values());
-  }
-
   function transformarYSetCompra(reserva: any, status?: string | null, payment_type?: string | null, payment_id?: string | null) {
-    const rawQR = reserva.credencialesAcceso?.[0]?.codigo_qr || reserva.id;
+    const rawQR = reserva.qr_data || reserva.id;
     const dataUrl = rawQR && rawQR.startsWith('data:image') ? rawQR : null;
-    const precioUnitario = reserva.cantidad_boletos ? reserva.precio_total / reserva.cantidad_boletos : reserva.precio_total;
 
-    const entradasAgrupadas = agruparEntradas(reserva.credencialesAcceso, reserva.cantidad_boletos);
-    const entradasFinal = entradasAgrupadas.map(e => ({
-      ...e,
-      precio: e.precio || precioUnitario,  // asigna precio unitario si no tiene
-    }));
+    // Usa entradas tal cual viene desde backend (agrupadas y con precios)
+    const entradas = reserva.entradas || [{
+      nombre: 'General',
+      cantidad: reserva.cantidad_boletos || 1,
+      precio: reserva.precio_total / (reserva.cantidad_boletos || 1)
+    }];
 
-    const compraTransformada = {
+    setCompra({
       reservaId: reserva.id,
       evento: {
         nombre: reserva.evento?.nombre || 'Evento',
         fecha: reserva.evento?.fecha_inicio || '',
         lugar: reserva.evento?.ubicacion || '',
       },
-      entradas: entradasFinal,
+      entradas,
       numeroOrden: reserva.numero_orden || `orden-${Math.floor(Math.random() * 1000000)}`,
-      fechaCompra: reserva.fecha_reserva || new Date().toISOString(),
+      fechaCompra: reserva.fecha_reserva || (new Date()).toISOString(),
       total: reserva.precio_total || 0,
       subtotal: reserva.subtotal || reserva.precio_total || 0,
       cargoServicio: reserva.cargo_servicio || 0,
@@ -172,20 +147,22 @@ export default function ExitoCompraPage() {
       qrDataURL: dataUrl,
       qrString: !dataUrl ? rawQR : null,
       estado_transaccion: reserva.pagos?.[0]?.estado_transaccion || null,
-    };
+    });
 
-    setCompra(compraTransformada);
     setLoading(false);
 
-    if ((status === 'approved' || compraTransformada.estado_transaccion === 'approved') && reserva.id) {
+    // Confirmar reserva si aplica
+    if ((status === 'approved' || reserva.pagos?.[0]?.estado_transaccion === 'approved') && reserva.id) {
       marcarReservaComoConfirmada(
         reserva.id,
         payment_id ?? null,
-        payment_type || compraTransformada.metodoPago,
-        status || compraTransformada.estado_transaccion,
+        payment_type || reserva.metodo_pago,
+        status || reserva.pagos?.[0]?.estado_transaccion,
       );
     }
   }
+
+
 
 
   function buscarPorExternalReference(reservaId: string | null, status?: string | null, payment_type?: string | null, payment_id?: string | null) {
@@ -245,6 +222,11 @@ export default function ExitoCompraPage() {
   const handleAgregarCalendario = () => {
     if (!compra) return;
     const evento = compra.evento;
+    if (!evento || !evento.fecha || !evento.nombre) {
+      alert("Datos del evento incompletos para agregar al calendario.");
+      return;
+    }
+    console.log('Fecha inicio evento:', evento.fecha);
     const fechaInicio = new Date(evento.fecha).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     const fechaFin = new Date(new Date(evento.fecha).getTime() + 2 * 60 * 60 * 1000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     const icsContent = [

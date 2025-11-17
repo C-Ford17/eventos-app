@@ -3,11 +3,29 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Función para agrupar entradas en backend (puede ir dentro del handler GET)
+function agruparEntradas(credenciales: any[], cantidadBoletos: number) {
+  if (!credenciales || credenciales.length === 0) {
+    return [{
+      nombre: 'General',
+      cantidad: cantidadBoletos || 1,
+      precio: 0,
+    }];
+  }
+  const mapEntradas = new Map<string, { nombre: string, cantidad: number }>();
+  credenciales.forEach(c => {
+    const tipo = c.tipo_entrada || 'General';
+    if (mapEntradas.has(tipo)) {
+      mapEntradas.get(tipo)!.cantidad++;
+    } else {
+      mapEntradas.set(tipo, { nombre: tipo, cantidad: 1 });
+    }
+  });
+  return Array.from(mapEntradas.values());
+}
+
 // GET - Obtener detalles de una reserva
-export async function GET(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
 
@@ -21,9 +39,9 @@ export async function GET(
               select: {
                 nombre: true,
                 email: true,
-              },
+              }
             },
-          },
+          }
         },
         asistente: {
           select: {
@@ -38,28 +56,28 @@ export async function GET(
     });
 
     if (!reserva) {
-      return NextResponse.json(
-        { error: 'Reserva no encontrada' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
     }
 
-    // Ya NO parseamos qr_data. Es un string simple, úsalo como está
-    const qrData = reserva.qr_data || null;
+    // Agrupar entradas con cantidades
+    const entradasAgrupadas = agruparEntradas(reserva.credencialesAcceso, reserva.cantidad_boletos);
+    const precioUnitario = reserva.cantidad_boletos ? Number(reserva.precio_total) / reserva.cantidad_boletos : Number(reserva.precio_total);
 
+    // Añadir precio unitario a cada entrada agrupada
+    const entradas = entradasAgrupadas.map(e => ({ ...e, precio: precioUnitario }));
+
+    // Construir la respuesta con nuevas entradas
     return NextResponse.json({
       success: true,
       reserva: {
         ...reserva,
-        qrData,
+        entradas,
+        qrData: reserva.qr_data || null,
       },
     });
   } catch (error: any) {
     console.error('Error obteniendo reserva:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener reserva' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error al obtener reserva' }, { status: 500 });
   }
 }
 
