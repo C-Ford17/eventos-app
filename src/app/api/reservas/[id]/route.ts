@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+
 // Función para agrupar entradas en backend
 function agruparEntradas(credenciales: any[], cantidadBoletos: number) {
   if (!credenciales || credenciales.length === 0) {
@@ -73,7 +74,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     if (!reserva) {
       return NextResponse.json({ error: 'Reserva no encontrada' }, { status: 404 });
     }
-
+    console.log("Credenciales con tipoEntrada:", JSON.stringify(reserva.credencialesAcceso, null, 2));
     // Agrupar entradas con cantidades y precios
     const entradasAgrupadas = agruparEntradas(reserva.credencialesAcceso, reserva.cantidad_boletos);
     

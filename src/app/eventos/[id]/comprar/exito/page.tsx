@@ -129,6 +129,9 @@ export default function ExitoCompraPage() {
     cantidad: reserva.cantidad_boletos || 1,
     precio: 0
   }];
+  console.log("Reserva recibida:", JSON.stringify(reserva, null, 2));
+  console.log("Entradas agrupadas:", JSON.stringify(entradas, null, 2));
+
 
   setCompra({
     reservaId: reserva.id,
