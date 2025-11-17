@@ -119,11 +119,42 @@ export default function ExitoCompraPage() {
     }
   }, [compra]);
 
+  function agruparEntradas(credenciales: any[], cantidadBoletos: number) {
+    if (!credenciales || credenciales.length === 0) {
+      return [{
+        nombre: 'General',
+        cantidad: cantidadBoletos || 1,
+        precio: 0,
+      }];
+    }
+
+    const mapEntradas = new Map<string, { nombre: string, cantidad: number, precio: number }>();
+
+    credenciales.forEach(c => {
+      const tipo = c.tipo_entrada || 'General';
+      if (!mapEntradas.has(tipo)) {
+        mapEntradas.set(tipo, { nombre: tipo, cantidad: 1, precio: 0 });
+      } else {
+        const entry = mapEntradas.get(tipo)!;
+        entry.cantidad += 1;
+        mapEntradas.set(tipo, entry);
+      }
+    });
+
+    return Array.from(mapEntradas.values());
+  }
+
   function transformarYSetCompra(reserva: any, status?: string | null, payment_type?: string | null, payment_id?: string | null) {
-    // Intenta preferir un base64, si no tienes uno toma el código plano y se generará luego el QR
     const rawQR = reserva.credencialesAcceso?.[0]?.codigo_qr || reserva.id;
     const dataUrl = rawQR && rawQR.startsWith('data:image') ? rawQR : null;
     const precioUnitario = reserva.cantidad_boletos ? reserva.precio_total / reserva.cantidad_boletos : reserva.precio_total;
+
+    const entradasAgrupadas = agruparEntradas(reserva.credencialesAcceso, reserva.cantidad_boletos);
+    const entradasFinal = entradasAgrupadas.map(e => ({
+      ...e,
+      precio: e.precio || precioUnitario,  // asigna precio unitario si no tiene
+    }));
+
     const compraTransformada = {
       reservaId: reserva.id,
       evento: {
@@ -131,41 +162,31 @@ export default function ExitoCompraPage() {
         fecha: reserva.evento?.fecha_inicio || '',
         lugar: reserva.evento?.ubicacion || '',
       },
-      entradas: reserva.credencialesAcceso?.map((c: any) => ({
-        nombre: c.tipo_entrada || 'Entrada General',
-        cantidad: 1,
-        precio: precioUnitario,
-      })) || [{
-        nombre: 'General',
-        cantidad: reserva.cantidad_boletos || 1,
-        precio: precioUnitario,
-      }],
+      entradas: entradasFinal,
       numeroOrden: reserva.numero_orden || `orden-${Math.floor(Math.random() * 1000000)}`,
-      fechaCompra: reserva.fecha_reserva,
-      total: reserva.precio_total,
-      subtotal: reserva.subtotal || reserva.precio_total,
+      fechaCompra: reserva.fecha_reserva || new Date().toISOString(),
+      total: reserva.precio_total || 0,
+      subtotal: reserva.subtotal || reserva.precio_total || 0,
       cargoServicio: reserva.cargo_servicio || 0,
-      metodoPago: reserva.pagos?.[0]?.metodo_pago || payment_type || 'Pendiente',
+      metodoPago: reserva.metodo_pago || payment_type || 'Pendiente',
       qrDataURL: dataUrl,
       qrString: !dataUrl ? rawQR : null,
-      estado_transaccion: reserva.pagos?.[0]?.estado_transaccion // para validación
+      estado_transaccion: reserva.pagos?.[0]?.estado_transaccion || null,
     };
+
     setCompra(compraTransformada);
     setLoading(false);
 
-    // Si finalmente es aprobado (ya sea desde backend o searchparam), siempre confirmar
-    if (
-      (status === 'approved' || compraTransformada.estado_transaccion === 'approved') &&
-      reserva.id
-    ) {
+    if ((status === 'approved' || compraTransformada.estado_transaccion === 'approved') && reserva.id) {
       marcarReservaComoConfirmada(
         reserva.id,
-        payment_id ?? null,        // <-- así conviertes undefined => null
+        payment_id ?? null,
         payment_type || compraTransformada.metodoPago,
-        status || compraTransformada.estado_transaccion
+        status || compraTransformada.estado_transaccion,
       );
     }
   }
+
 
   function buscarPorExternalReference(reservaId: string | null, status?: string | null, payment_type?: string | null, payment_id?: string | null) {
     if (!reservaId || reservaId === 'null') {
@@ -191,27 +212,33 @@ export default function ExitoCompraPage() {
   };
 
   const handleDescargarPDF = () => {
-  if (compra && compra.qrDataURL) {
-    generarPDFBoleto({
-      evento: {
-        nombre: compra.evento?.nombre || 'Evento',
-        fecha: compra.evento?.fecha || compra.evento?.fecha_inicio || new Date().toISOString(),
-        lugar: compra.evento?.lugar || compra.evento?.ubicacion || 'Ubicación no disponible',
-      },
-      entradas: compra.entradas?.length > 0 ? compra.entradas : [{
-        nombre: 'Entrada General',
-        cantidad: 1,
-        precio: compra.total || 0,
-      }],
-      numeroOrden: compra.numeroOrden ? Number(compra.numeroOrden) : Math.floor(Math.random() * 1000000),
-      reservaId: compra.reservaId || 'sin-id',
-      fechaCompra: compra.fechaCompra || new Date().toISOString(),
-      total: Number(compra.total) || 0,
-      qrDataURL: compra.qrDataURL,
-      metodoPago: compra.metodoPago || 'Desconocido',
-    });
-  }
-};
+    if (compra && compra.qrDataURL) {
+      // Garantizar entradas con cantidad y nombre correcto
+      const entradas = compra.entradas && compra.entradas.length > 0
+        ? compra.entradas
+        : [{ nombre: 'Entrada General', cantidad: 1, precio: compra.total || 0 }];
+
+      // Convertir numeroOrden a número si es posible
+      const numeroOrden = compra.numeroOrden ? Number(compra.numeroOrden) : Math.floor(Math.random() * 1000000);
+
+      // Llamada final
+      generarPDFBoleto({
+        evento: {
+          nombre: compra.evento?.nombre || 'Evento',
+          fecha: compra.evento?.fecha || compra.evento?.fecha_inicio || new Date().toISOString(),
+          lugar: compra.evento?.lugar || compra.evento?.ubicacion || 'Ubicación no disponible',
+        },
+        entradas: entradas,
+        numeroOrden: numeroOrden,
+        reservaId: compra.reservaId || 'sin-id',
+        fechaCompra: compra.fechaCompra || new Date().toISOString(),
+        total: Number(compra.total) || 0,
+        qrDataURL: compra.qrDataURL,
+        metodoPago: compra.metodoPago || 'Desconocido',
+      });
+    }
+  };
+
 
   
 
