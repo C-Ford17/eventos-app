@@ -30,6 +30,14 @@ export default function ExitoCompraPage() {
     })
       .then(async res => {
         const data = await res.json();
+        if (res.ok && data.reserva) {
+          setCompra((prev : any) => ({
+            ...prev,
+            metodoPago: data.reserva.metodo_pago,
+            estado_transaccion: data.reserva.estado_reserva,
+            total: data.reserva.precio_total, // por si quieres refrescar total también
+          }));
+        }
         console.log("Reserva actualizada desde éxito:", data, res.status);
       })
       .catch(err => console.error('Error al marcar confirmada:', err));
