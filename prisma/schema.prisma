@@ -100,11 +100,11 @@ model CredencialAcceso {
   codigo_qr         String    @unique
   estado_validacion String    @default("pendiente")
   fecha_validacion  DateTime?
-  tipo_entrada_id   String? // AGREGA ESTE CAMPO
+  tipo_entrada_id   String? // Este campo debe existir
   createdAt         DateTime  @default(now()) @map("created_at")
 
   reserva     Reserva      @relation(fields: [reserva_id], references: [id])
-  tipoEntrada TipoEntrada? @relation(fields: [tipo_entrada_id], references: [id])
+  tipoEntrada TipoEntrada? @relation(fields: [tipo_entrada_id], references: [id]) // Nombre del campo es tipoEntrada
 
   @@map("credenciales_acceso")
 }
