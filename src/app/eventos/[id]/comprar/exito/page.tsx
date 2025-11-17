@@ -15,17 +15,9 @@ export default function ExitoCompraPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Intenta primero obtener la compra local
-    const compraStr = localStorage.getItem('ultimaCompra');
-    if (compraStr) {
-      setCompra(JSON.parse(compraStr));
-      setLoading(false);
-      return;
-    }
-    // Si no existe local, busca por parámetros de MercadoPago
+    // SIEMPRE da prioridad a buscar por collection_id de query
     const collection_id = searchParams.get('collection_id');
     if (collection_id) {
-      // Ajusta este endpoint según tu backend
       fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
         .then(res => res.json())
         .then(data => {
@@ -34,6 +26,11 @@ export default function ExitoCompraPage() {
         })
         .catch(() => setLoading(false));
       return;
+    }
+    // Si no hay parámetro de MP, busca en localStorage (flujo clásico)
+    const compraStr = localStorage.getItem('ultimaCompra');
+    if (compraStr) {
+      setCompra(JSON.parse(compraStr));
     }
     setLoading(false);
   }, [eventoId, searchParams]);
