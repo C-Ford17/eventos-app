@@ -1,4 +1,3 @@
-// /src/app/api/webhook-mercadopago/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -14,7 +13,6 @@ export async function POST(req: Request) {
 
     const paymentId = body.data.id;
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    const prisma = new PrismaClient();
 
     const paymentResp = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       method: 'GET',
@@ -31,13 +29,24 @@ export async function POST(req: Request) {
 
     const reservaId = paymentData.external_reference;
     const estadoPago = paymentData.status;
+    const metodoPago = paymentData.payment_method_id; // tipo real (visa, pse, etc)
+    const paymentIdStr = String(paymentData.id);
 
-    if (estadoPago === 'approved') {
-      await prisma.reserva.update({
-        where: { id: reservaId },
-        data: { estado_reserva: 'confirmada' },
-      });
-    }
+    // Actualiza el pago asociado a la reserva: referencia_externa = paymentIdStr, metodo_pago = metodoPago
+    await prisma.pago.updateMany({
+      where: { reserva_id: reservaId },
+      data: {
+        referencia_externa: paymentIdStr,
+        metodo_pago: metodoPago,
+        estado_transaccion: estadoPago
+      },
+    });
+
+    // Actualiza el estado de la reserva según pago
+    await prisma.reserva.update({
+      where: { id: reservaId },
+      data: { estado_reserva: estadoPago === 'approved' ? 'confirmada' : 'pendiente' },
+    });
 
     return NextResponse.json({ message: 'Webhook procesado correctamente' });
   } catch (error) {

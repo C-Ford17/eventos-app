@@ -1,25 +1,90 @@
-// src/app/eventos/[id]/comprar/exito/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { descargarQRImagen } from '@/lib/qr';
 import { generarPDFBoleto } from '@/lib/pdf-boleto';
 
 export default function ExitoCompraPage() {
   const params = useParams();
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const eventoId = params.id;
+  const router = useRouter();
+
   const [compra, setCompra] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const compraStr = localStorage.getItem('ultimaCompra');
-    if (!compraStr) {
-      router.push(`/eventos/${eventoId}`);
-      return;
-    }
+  const collection_id = searchParams.get('collection_id');
+  const external_reference = searchParams.get('external_reference');
+
+  // Prioridad 1: Buscar por external_reference (más confiable al inicio)
+  if (external_reference && external_reference !== 'null') {
+    buscarPorExternalReference(external_reference);
+    return;
+  }
+
+  // Prioridad 2: Buscar por collection_id si existe y no es "null"
+  if (collection_id && collection_id !== 'null') {
+    fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.reserva) {
+          transformarYSetCompra(data.reserva);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => setLoading(false));
+    return;
+  }
+
+  // Prioridad 3: Fallback a localStorage
+  const compraStr = localStorage.getItem('ultimaCompra');
+  if (compraStr) {
     setCompra(JSON.parse(compraStr));
-  }, [eventoId, router]);
+  }
+  setLoading(false);
+}, [searchParams]);
+
+function transformarYSetCompra(reserva: any) {
+  const compraTransformada = {
+    reservaId: reserva.id,
+    evento: reserva.evento,
+    entradas: reserva.credencialesAcceso?.map((c: any) => ({
+      nombre: c.tipo_entrada,
+      cantidad: 1,
+    })) || [{nombre: 'General', cantidad: reserva.cantidad_boletos}],
+    numeroOrden: reserva.numero_orden,
+    fechaCompra: reserva.fecha_reserva,
+    total: reserva.precio_total,
+    subtotal: reserva.subtotal || reserva.precio_total,
+    cargoServicio: reserva.cargo_servicio || 0,
+    metodoPago: reserva.pagos?.[0]?.metodo_pago || 'Pendiente',
+    qrDataURL: reserva.credencialesAcceso?.[0]?.codigo_qr || null,
+  };
+  setCompra(compraTransformada);
+  setLoading(false);
+}
+
+function buscarPorExternalReference(reservaId: string | null) {
+  if (!reservaId || reservaId === 'null') {
+    setLoading(false);
+    return;
+  }
+  
+  fetch(`/api/reservas/${reservaId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.reserva) {
+        transformarYSetCompra(data.reserva);
+      } else {
+        setLoading(false);
+      }
+    })
+    .catch(() => setLoading(false));
+}
+
 
   const handleDescargarImagen = () => {
     if (compra?.qrDataURL) {
@@ -43,13 +108,10 @@ export default function ExitoCompraPage() {
   };
 
   const handleAgregarCalendario = () => {
-    // Genera un archivo .ics para agregar al calendario
     if (!compra) return;
-
     const evento = compra.evento;
     const fechaInicio = new Date(evento.fecha).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     const fechaFin = new Date(new Date(evento.fecha).getTime() + 2 * 60 * 60 * 1000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-
     const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -63,7 +125,6 @@ export default function ExitoCompraPage() {
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\r\n');
-
     const blob = new Blob([icsContent], { type: 'text/calendar' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -75,10 +136,23 @@ export default function ExitoCompraPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (!compra) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <p className="text-gray-400">Cargando...</p>
+      </div>
+    );
+  }
+
+  if (!compra) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold mb-4 text-red-600">
+          No se encontró información de la compra.
+        </h1>
+        <Link href="/dashboard/asistente/boletos" className="text-blue-500 hover:underline">
+          Ver mis boletos
+        </Link>
       </div>
     );
   }
@@ -94,89 +168,75 @@ export default function ExitoCompraPage() {
             </svg>
           </div>
         </div>
-
         <h1 className="text-4xl font-bold text-white text-center mb-2">
           ¡Gracias por tu compra!
         </h1>
         <p className="text-center text-gray-400 mb-8">
           Hemos enviado un recibo a tu correo electrónico.
         </p>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Resumen de la Compra */}
           <div className="bg-neutral-800 p-6 rounded-lg">
             <h2 className="text-xl font-semibold text-white mb-4">Resumen de la Compra</h2>
-
             <div className="space-y-3 mb-6">
               <div>
                 <p className="text-gray-400 text-sm">Evento</p>
-                <p className="text-white font-medium">{compra.evento.nombre}</p>
+                <p className="text-white font-medium">{compra.evento?.nombre || 'Evento'}</p>
               </div>
-
               <div>
-                {/* Fecha y hora */}
                 <p className="text-gray-400 text-sm">Fecha</p>
-                  <p className="text-white">
-                    {compra.evento.fecha_inicio || compra.evento.fecha
-                      ? (
-                        <>
-                          {new Date(compra.evento.fecha_inicio || compra.evento.fecha).toLocaleDateString('es-ES', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                          , {new Date(compra.evento.fecha_inicio || compra.evento.fecha).toLocaleTimeString('es-ES', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </>
-                      ) : (
-                        "Fecha no disponible"
-                      )
-                    }
-                  </p>
-              </div>
-
-              <div>
-                {/* Ubicacion */}
-                <p className="text-gray-400 text-sm">Ubicacion</p>
                 <p className="text-white">
-                  {compra.evento.ubicacion || compra.evento.lugar || "Lugar no disponible"}
+                  {compra.evento?.fecha_inicio || compra.evento?.fecha
+                    ? (
+                      <>
+                        {new Date(compra.evento.fecha_inicio || compra.evento.fecha).toLocaleDateString('es-ES', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                        , {new Date(compra.evento.fecha_inicio || compra.evento.fecha).toLocaleTimeString('es-ES', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </>
+                    )
+                    : "Fecha no disponible"
+                  }
                 </p>
               </div>
-
+              <div>
+                <p className="text-gray-400 text-sm">Ubicación</p>
+                <p className="text-white">
+                  {compra.evento?.ubicacion || compra.evento?.lugar || "Lugar no disponible"}
+                </p>
+              </div>
               <div className="border-t border-neutral-700 pt-3">
                 <p className="text-gray-400 text-sm mb-2">Entradas</p>
-                {compra.entradas.map((entrada: any, index: number) => (
+                {compra.entradas?.map((entrada: any, index: number) => (
                   <p key={index} className="text-white">
                     {entrada.cantidad}x {entrada.nombre}
                   </p>
                 ))}
               </div>
-
               <div className="border-t border-neutral-700 pt-3">
                 <p className="text-gray-400 text-sm">Total Pagado</p>
                 <p className="text-white text-2xl font-bold">
-                  ${compra.total.toLocaleString('es-CO')}
+                  ${compra.total?.toLocaleString('es-CO')}
                 </p>
               </div>
-
               <div>
                 <p className="text-gray-400 text-sm">Método de Pago</p>
                 <p className="text-white">{compra.metodoPago}</p>
               </div>
             </div>
           </div>
-
           {/* Tu Entrada (QR) */}
           <div className="bg-neutral-800 p-6 rounded-lg">
             <h2 className="text-xl font-semibold text-white mb-4 text-center">Tu Entrada</h2>
             <p className="text-center text-gray-400 text-sm mb-6">
               Escanea este código en el acceso.
             </p>
-
-            {/* QR Code REAL */}
             <div className="bg-white p-6 rounded-lg flex items-center justify-center mb-4">
               <div className="text-center">
                 {compra.qrDataURL ? (
@@ -197,8 +257,6 @@ export default function ExitoCompraPage() {
                 )}
               </div>
             </div>
-
-            {/* Botones de descarga */}
             <div className="space-y-3">
               <button
                 onClick={handleDescargarPDF}
@@ -209,7 +267,6 @@ export default function ExitoCompraPage() {
                 </svg>
                 Descargar Boleto PDF
               </button>
-
               <button
                 onClick={handleDescargarImagen}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center"
@@ -222,11 +279,9 @@ export default function ExitoCompraPage() {
             </div>
           </div>
         </div>
-
         {/* Próximos Pasos */}
         <div className="mt-8 bg-neutral-800 p-6 rounded-lg">
           <h3 className="text-xl font-semibold text-white mb-4">Próximos Pasos</h3>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link
               href="/dashboard/asistente/boletos"
@@ -240,7 +295,6 @@ export default function ExitoCompraPage() {
                 <p className="text-blue-200 text-sm">Accede a todos tus boletos</p>
               </div>
             </Link>
-
             <button
               onClick={handleAgregarCalendario}
               className="flex items-center p-4 bg-neutral-700 hover:bg-neutral-600 rounded-lg transition"
@@ -255,8 +309,6 @@ export default function ExitoCompraPage() {
             </button>
           </div>
         </div>
-
-        {/* Información adicional */}
         <div className="mt-6 text-center">
           <p className="text-gray-400 text-sm">
             ¿Necesitas ayuda? <Link href="/ayuda" className="text-blue-400 hover:text-blue-300">Contacta a Soporte</Link>
