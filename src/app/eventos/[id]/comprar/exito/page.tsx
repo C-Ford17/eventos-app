@@ -18,26 +18,24 @@ export default function ExitoCompraPage() {
   const collection_id = searchParams.get('collection_id');
   const external_reference = searchParams.get('external_reference');
 
-  // Prioridad 1: Buscar por collection_id si existe y no es "null"
+  // Prioridad 1: Buscar por external_reference (más confiable al inicio)
+  if (external_reference && external_reference !== 'null') {
+    buscarPorExternalReference(external_reference);
+    return;
+  }
+
+  // Prioridad 2: Buscar por collection_id si existe y no es "null"
   if (collection_id && collection_id !== 'null') {
     fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.reserva) {
-          setCompra(data.reserva);
-          setLoading(false);
+          transformarYSetCompra(data.reserva);
         } else {
-          // Si no encuentra por collection_id, intenta por external_reference
-          buscarPorExternalReference(external_reference);
+          setLoading(false);
         }
       })
-      .catch(() => buscarPorExternalReference(external_reference));
-    return;
-  }
-
-  // Prioridad 2: Si no hay collection_id válido, busca por external_reference (reservaId)
-  if (external_reference && external_reference !== 'null') {
-    buscarPorExternalReference(external_reference);
+      .catch(() => setLoading(false));
     return;
   }
 
@@ -49,6 +47,26 @@ export default function ExitoCompraPage() {
   setLoading(false);
 }, [searchParams]);
 
+function transformarYSetCompra(reserva: any) {
+  const compraTransformada = {
+    reservaId: reserva.id,
+    evento: reserva.evento,
+    entradas: reserva.credencialesAcceso?.map((c: any) => ({
+      nombre: c.tipo_entrada,
+      cantidad: 1,
+    })) || [{nombre: 'General', cantidad: reserva.cantidad_boletos}],
+    numeroOrden: reserva.numero_orden,
+    fechaCompra: reserva.fecha_reserva,
+    total: reserva.precio_total,
+    subtotal: reserva.subtotal || reserva.precio_total,
+    cargoServicio: reserva.cargo_servicio || 0,
+    metodoPago: reserva.pagos?.[0]?.metodo_pago || 'Pendiente',
+    qrDataURL: reserva.credencialesAcceso?.[0]?.codigo_qr || null,
+  };
+  setCompra(compraTransformada);
+  setLoading(false);
+}
+
 function buscarPorExternalReference(reservaId: string | null) {
   if (!reservaId || reservaId === 'null') {
     setLoading(false);
@@ -58,13 +76,15 @@ function buscarPorExternalReference(reservaId: string | null) {
   fetch(`/api/reservas/${reservaId}`)
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
-        setCompra(data.reserva);
+      if (data.success && data.reserva) {
+        transformarYSetCompra(data.reserva);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     })
     .catch(() => setLoading(false));
 }
+
 
   const handleDescargarImagen = () => {
     if (compra?.qrDataURL) {
