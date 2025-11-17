@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import QRCode from 'qrcode';
 import { descargarQRImagen } from '@/lib/qr';
 import { generarPDFBoleto } from '@/lib/pdf-boleto';
 
@@ -15,18 +16,79 @@ export default function ExitoCompraPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  const collection_id = searchParams.get('collection_id');
-  const external_reference = searchParams.get('external_reference');
+    const collection_id = searchParams.get('collection_id');
+    const external_reference = searchParams.get('external_reference');
 
-  // Prioridad 1: Buscar por external_reference (más confiable al inicio)
-  if (external_reference && external_reference !== 'null') {
-    buscarPorExternalReference(external_reference);
-    return;
+    // Prioridad 1: Buscar por external_reference
+    if (external_reference && external_reference !== 'null') {
+      buscarPorExternalReference(external_reference);
+      return;
+    }
+
+    // Prioridad 2: Buscar por collection_id
+    if (collection_id && collection_id !== 'null') {
+      fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.reserva) {
+            transformarYSetCompra(data.reserva);
+          } else {
+            setLoading(false);
+          }
+        })
+        .catch(() => setLoading(false));
+      return;
+    }
+
+    // Prioridad 3: Fallback a localStorage
+    const compraStr = localStorage.getItem('ultimaCompra');
+    if (compraStr) {
+      setCompra(JSON.parse(compraStr));
+    }
+    setLoading(false);
+  }, [searchParams]);
+
+  // Genera el QR dataURL en frontend si solo tienes el código plano
+  useEffect(() => {
+    if (compra && !compra.qrDataURL && compra.qrString) {
+      QRCode.toDataURL(compra.qrString, {
+        width: 400,
+        margin: 2,
+        color: { dark: '#000000', light: '#FFFFFF' }
+      }).then(url => setCompra((prev: any) => ({ ...prev, qrDataURL: url })));
+    }
+  }, [compra]);
+
+  function transformarYSetCompra(reserva: any) {
+    // Intenta preferir un base64, si no tienes uno toma el código plano y se generará luego el QR
+    const rawQR = reserva.credencialesAcceso?.[0]?.codigo_qr || reserva.id;
+    const dataUrl = rawQR && rawQR.startsWith('data:image') ? rawQR : null;
+    const compraTransformada = {
+      reservaId: reserva.id,
+      evento: reserva.evento,
+      entradas: reserva.credencialesAcceso?.map((c: any) => ({
+        nombre: c.tipo_entrada,
+        cantidad: 1,
+      })) || [{nombre: 'General', cantidad: reserva.cantidad_boletos}],
+      numeroOrden: reserva.numero_orden,
+      fechaCompra: reserva.fecha_reserva,
+      total: reserva.precio_total,
+      subtotal: reserva.subtotal || reserva.precio_total,
+      cargoServicio: reserva.cargo_servicio || 0,
+      metodoPago: reserva.pagos?.[0]?.metodo_pago || 'Pendiente',
+      qrDataURL: dataUrl,
+      qrString: !dataUrl ? rawQR : null, // para generar el QR luego si lo necesitas
+    };
+    setCompra(compraTransformada);
+    setLoading(false);
   }
 
-  // Prioridad 2: Buscar por collection_id si existe y no es "null"
-  if (collection_id && collection_id !== 'null') {
-    fetch(`/api/reservas/buscar?mp_collection_id=${collection_id}`)
+  function buscarPorExternalReference(reservaId: string | null) {
+    if (!reservaId || reservaId === 'null') {
+      setLoading(false);
+      return;
+    }
+    fetch(`/api/reservas/${reservaId}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.reserva) {
@@ -36,55 +98,7 @@ export default function ExitoCompraPage() {
         }
       })
       .catch(() => setLoading(false));
-    return;
   }
-
-  // Prioridad 3: Fallback a localStorage
-  const compraStr = localStorage.getItem('ultimaCompra');
-  if (compraStr) {
-    setCompra(JSON.parse(compraStr));
-  }
-  setLoading(false);
-}, [searchParams]);
-
-function transformarYSetCompra(reserva: any) {
-  const compraTransformada = {
-    reservaId: reserva.id,
-    evento: reserva.evento,
-    entradas: reserva.credencialesAcceso?.map((c: any) => ({
-      nombre: c.tipo_entrada,
-      cantidad: 1,
-    })) || [{nombre: 'General', cantidad: reserva.cantidad_boletos}],
-    numeroOrden: reserva.numero_orden,
-    fechaCompra: reserva.fecha_reserva,
-    total: reserva.precio_total,
-    subtotal: reserva.subtotal || reserva.precio_total,
-    cargoServicio: reserva.cargo_servicio || 0,
-    metodoPago: reserva.pagos?.[0]?.metodo_pago || 'Pendiente',
-    qrDataURL: reserva.credencialesAcceso?.[0]?.codigo_qr || null,
-  };
-  setCompra(compraTransformada);
-  setLoading(false);
-}
-
-function buscarPorExternalReference(reservaId: string | null) {
-  if (!reservaId || reservaId === 'null') {
-    setLoading(false);
-    return;
-  }
-  
-  fetch(`/api/reservas/${reservaId}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && data.reserva) {
-        transformarYSetCompra(data.reserva);
-      } else {
-        setLoading(false);
-      }
-    })
-    .catch(() => setLoading(false));
-}
-
 
   const handleDescargarImagen = () => {
     if (compra?.qrDataURL) {
@@ -93,7 +107,7 @@ function buscarPorExternalReference(reservaId: string | null) {
   };
 
   const handleDescargarPDF = () => {
-    if (compra) {
+    if (compra && compra.qrDataURL) {
       generarPDFBoleto({
         evento: compra.evento,
         entradas: compra.entradas,
@@ -156,7 +170,7 @@ function buscarPorExternalReference(reservaId: string | null) {
       </div>
     );
   }
-
+  
   return (
     <div className="min-h-screen bg-gray-950 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -252,7 +266,7 @@ function buscarPorExternalReference(reservaId: string | null) {
                   </>
                 ) : (
                   <div className="w-48 h-48 bg-gray-200 flex items-center justify-center">
-                    <p className="text-gray-500 text-sm">Error al cargar QR</p>
+                    <p className="text-gray-500 text-sm">Generando código QR...</p>
                   </div>
                 )}
               </div>
@@ -261,19 +275,15 @@ function buscarPorExternalReference(reservaId: string | null) {
               <button
                 onClick={handleDescargarPDF}
                 className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition flex items-center justify-center"
+                disabled={!compra.qrDataURL}
               >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
                 Descargar Boleto PDF
               </button>
               <button
                 onClick={handleDescargarImagen}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center"
+                disabled={!compra.qrDataURL}
               >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
                 Descargar Solo QR
               </button>
             </div>
