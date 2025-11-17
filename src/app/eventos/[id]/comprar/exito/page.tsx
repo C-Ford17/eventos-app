@@ -235,6 +235,13 @@ export default function ExitoCompraPage() {
       </div>
     );
   }
+  
+  function formatCOP(valor: number | string | null | undefined) {
+  if (!valor) return "COP $0";
+  const num = typeof valor === "string" ? parseFloat(valor) : valor;
+  return num.toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
+}
+
 
   if (!compra) {
     return (
@@ -313,9 +320,7 @@ export default function ExitoCompraPage() {
               </div>
               <div className="border-t border-neutral-700 pt-3">
                 <p className="text-gray-400 text-sm">Total Pagado</p>
-                <p className="text-white text-2xl font-bold">
-                  ${compra.total?.toLocaleString('es-CO')}
-                </p>
+                <p className="text-white">{formatCOP(compra.total)}</p>
               </div>
               <div>
                 <p className="text-gray-400 text-sm">Método de Pago</p>
