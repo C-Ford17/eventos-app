@@ -91,16 +91,18 @@ export default function EscanearEntradasPage() {
   setValidando(true);
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
+
+    // Enviar qrData como UUID directamente al backend para validar
     const response = await fetch('/api/validar-qr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        qrData,
-        staff_id: user.id, // Envía el ID del staff para auditoría
-        evento_id: eventoSeleccionado, // ✅ Enviar evento seleccionado
+      body: JSON.stringify({
+        qrData,         // QR esperado como UUID string
+        staff_id: user.id,
+        evento_id: eventoSeleccionado,
       }),
     });
+
 
     const result = await response.json();
 
@@ -151,33 +153,15 @@ const handleScanError = (error: string) => {
   showNotification('Error con la cámara: ' + error, 'error');
 };
 
-  // src/app/dashboard/staff/escanear/page.tsx
 const handleValidarManual = (e: React.FormEvent) => {
   e.preventDefault();
-  
   if (!codigoManual.trim()) {
     showNotification('Ingresa un código válido', 'error');
     return;
   }
-
-  // ✅ Validar que sea un JSON válido
-  try {
-    // Intentar parsear para validar formato
-    const parsed = JSON.parse(codigoManual);
-    
-    // Verificar que tenga los campos necesarios
-    if (!parsed.reservaId || !parsed.hash || !parsed.eventoId || !parsed.usuarioId) {
-      showNotification('Código QR incompleto o inválido', 'error');
-      return;
-    }
-    
-    // Enviar el string original (ya validado)
-    validarQR(codigoManual);
-    setCodigoManual('');
-  } catch (error) {
-    console.error('Error parseando código manual:', error);
-    showNotification('Código QR inválido - formato JSON incorrecto', 'error');
-  }
+  // Ya no intentas parsear JSON, aceptas string plano
+  validarQR(codigoManual.trim());
+  setCodigoManual('');
 };
 
 // ✅ NUEVA FUNCIÓN: Subir imagen

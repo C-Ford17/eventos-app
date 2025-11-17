@@ -1,7 +1,7 @@
-// src/app/api/reservas/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { generarQR, generarHashValidacion, type QRData } from '@/lib/qr';
+import { generarHashValidacion } from '@/lib/qr';
+import QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
@@ -138,20 +138,22 @@ export async function POST(req: Request) {
     // Genera número de orden único
     const numeroOrden = Math.floor(Math.random() * 1000000);
 
-    // Genera datos del QR
+    // Genera ID único para la reserva
     const reservaId = uuidv4();
+
+    // Genera hash para uso interno (si se requiere)
     const hash = generarHashValidacion(reservaId, usuario_id);
 
-    const qrData: QRData = {
-      reservaId,
-      eventoId: evento_id,
-      usuarioId: usuario_id,
-      fecha: new Date().toISOString(),
-      tipo: `${cantidad_boletos} boleto(s)`,
-      hash,
-    };
-
-    const qrDataURL = await generarQR(qrData);
+    // Genera código QR con solo el UUID
+    const qrString = reservaId;
+    const qrDataURL = await QRCode.toDataURL(qrString, {
+      width: 400,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+    });
 
     // Inicia transacción
     const resultado = await prisma.$transaction(async (tx) => {
@@ -166,7 +168,7 @@ export async function POST(req: Request) {
           metodo_pago,
           estado_reserva: 'confirmada',
           fecha_reserva: new Date(),
-          qr_data: JSON.stringify(qrData),
+          qr_data: qrString, // guardamos solo el UUID plano
           qr_hash: hash,
         },
       });
@@ -202,7 +204,7 @@ export async function POST(req: Request) {
           ...resultado.reserva,
           numeroOrden,
           qrDataURL,
-          qrData,
+          qrData: qrString,
         },
       },
       { status: 201 }
