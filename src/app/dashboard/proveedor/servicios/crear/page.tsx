@@ -2,11 +2,23 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Briefcase,
+  DollarSign,
+  FileText,
+  Tag,
+  Check,
+  X,
+  Loader2,
+  ArrowLeft,
+  Save
+} from 'lucide-react';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function CrearServicioPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
+
   // Estados del formulario
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -55,7 +67,7 @@ export default function CrearServicioPage() {
         throw new Error(result.error || 'Error al crear servicio');
       }
 
-      alert('Servicio creado exitosamente');
+      // alert('Servicio creado exitosamente'); // Removed alert for better UX
       router.push('/dashboard/proveedor/servicios');
     } catch (error: any) {
       console.error('Error:', error);
@@ -66,115 +78,155 @@ export default function CrearServicioPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="text-gray-400 hover:text-white"
+          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all border border-white/5"
         >
-          ← Volver
+          <ArrowLeft size={20} />
         </button>
-        <h1 className="text-3xl font-bold text-white">Crear Nuevo Servicio</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-white">Crear Nuevo Servicio</h1>
+          <p className="text-gray-400">Añade un nuevo servicio a tu catálogo</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-neutral-800 p-6 rounded-lg space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Nombre del Servicio *
-          </label>
-          <input
-            type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-            className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Ej: Servicio de Catering Premium"
-          />
-        </div>
+      {/* Main Form Card */}
+      <div className="bg-[#1a1a1a]/40 border border-white/5 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Categoría *
-          </label>
-          <select
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-            required
-            className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Selecciona una categoría</option>
-            {categorias.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Nombre del Servicio */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300 ml-1">
+              Nombre del Servicio <span className="text-blue-500">*</span>
+            </label>
+            <div className="relative">
+              <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                required
+                className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                placeholder="Ej: Servicio de Catering Premium"
+              />
+            </div>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Descripción *
-          </label>
-          <textarea
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            required
-            rows={4}
-            className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Describe tu servicio en detalle..."
-          />
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Categoría */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300 ml-1">
+                Categoría <span className="text-blue-500">*</span>
+              </label>
+              <div className="relative">
+                <Tag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10" size={18} />
+                <CustomDropdown
+                  options={categorias.map(cat => ({ value: cat, label: cat }))}
+                  value={categoria}
+                  onChange={(value) => setCategoria(value)}
+                  placeholder="Selecciona una categoría"
+                  buttonClassName="pl-12 w-full"
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Precio Base (COP) *
-          </label>
-          <input
-            type="number"
-            value={precioBase}
-            onChange={(e) => setPrecioBase(e.target.value)}
-            required
-            min="0"
-            step="1000"
-            className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Ej: 500000"
-          />
-          <p className="text-gray-400 text-xs mt-1">
-            Este es el precio base que se mostrará a los organizadores
-          </p>
-        </div>
+            {/* Precio Base */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300 ml-1">
+                Precio Base (COP) <span className="text-blue-500">*</span>
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                <input
+                  type="number"
+                  value={precioBase}
+                  onChange={(e) => setPrecioBase(e.target.value)}
+                  required
+                  min="0"
+                  step="1000"
+                  className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  placeholder="Ej: 500000"
+                />
+              </div>
+            </div>
+          </div>
 
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="disponibilidad"
-            checked={disponibilidad}
-            onChange={(e) => setDisponibilidad(e.target.checked)}
-            className="w-4 h-4 text-blue-600 bg-neutral-900 border-neutral-700 rounded focus:ring-blue-500"
-          />
-          <label htmlFor="disponibilidad" className="ml-2 text-sm text-gray-300">
-            Marcar como disponible para contratación
-          </label>
-        </div>
+          {/* Descripción */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300 ml-1">
+              Descripción <span className="text-blue-500">*</span>
+            </label>
+            <div className="relative">
+              <FileText className="absolute left-4 top-4 text-gray-500" size={18} />
+              <textarea
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                required
+                rows={4}
+                className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none"
+                placeholder="Describe tu servicio en detalle..."
+              />
+            </div>
+          </div>
 
-        <div className="flex space-x-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-semibold transition disabled:opacity-50"
-          >
-            {loading ? 'Creando...' : 'Crear Servicio'}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            disabled={loading}
-            className="px-6 bg-neutral-700 hover:bg-neutral-600 text-white py-3 rounded font-semibold transition disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
+          {/* Disponibilidad */}
+          <div className="flex items-center p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+            <div className="relative flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="disponibilidad"
+                  type="checkbox"
+                  checked={disponibilidad}
+                  onChange={(e) => setDisponibilidad(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-black/20 border-white/10 rounded focus:ring-blue-500 focus:ring-offset-0"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="disponibilidad" className="font-medium text-blue-400">
+                  Disponible para contratación inmediata
+                </label>
+                <p className="text-gray-400 text-xs mt-0.5">
+                  Si marcas esta opción, los organizadores podrán ver y solicitar este servicio.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-4 pt-4 border-t border-white/5">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              disabled={loading}
+              className="px-6 py-3 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+            >
+              <X size={18} />
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Creando Servicio...
+                </>
+              ) : (
+                <>
+                  <Save size={20} />
+                  Crear Servicio
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
