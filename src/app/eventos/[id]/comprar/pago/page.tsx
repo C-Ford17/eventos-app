@@ -30,7 +30,7 @@ export default function PagoPage() {
       return;
     }
 
-    // 1. Crear reserva pendiente
+    // En el handlePagar, cambia esta parte:
     const reservarRes = await fetch('/api/reservas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,8 +42,10 @@ export default function PagoPage() {
         subtotal: compra.subtotal,
         cargo_servicio: compra.cargoServicio,
         total: compra.total,
+        tipo_entrada_id: compra.entradas[0]?.id, // <-- AGREGA ESTA LÍNEA
       }),
     });
+
 
     const reservarData = await reservarRes.json();
     if (!reservarRes.ok || !reservarData.success) {

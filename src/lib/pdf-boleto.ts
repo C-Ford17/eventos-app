@@ -138,7 +138,7 @@ export function generarPDFBoleto(info: InfoBoleto) {
   doc.text('EventPlatform', pageWidth - 20, pageHeight - 20, { align: 'right' });
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
-  doc.text('www.eventplatform.com', pageWidth - 20, pageHeight - 15, { align: 'right' });
+  doc.text('https://eventos-app-nu.vercel.app/', pageWidth - 20, pageHeight - 15, { align: 'right' });
 
   // Descarga el PDF
   doc.save(`boleto-${info.reservaId}.pdf`);

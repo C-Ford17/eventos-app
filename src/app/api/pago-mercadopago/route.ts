@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       back_urls: {
         success: `${appUrl}/eventos/${eventoId}/comprar/exito`,
         failure: `${appUrl}/eventos/${eventoId}/comprar/fallo`,
-        pending: `${appUrl}/eventos/${eventoId}/comprar/pendiente`,
+        pending: `${appUrl}/eventos/${eventoId}/comprar/pending`,
       },
       auto_return: 'approved',
     }),
