@@ -179,6 +179,39 @@ export async function POST(req: Request) {
       },
     });
 
+    // 🔔 NOTIFICACIONES: Notificar a los asistentes interesados
+    try {
+      // 1. Obtener todos los asistentes
+      const asistentes = await prisma.usuario.findMany({
+        where: { tipo_usuario: 'asistente' },
+        select: { id: true, preferencias_notificacion: true }
+      });
+
+      // 2. Filtrar según preferencias (Default: true si es null)
+      const notificacionesData = asistentes
+        .filter(usuario => {
+          const prefs = usuario.preferencias_notificacion as any;
+          return !prefs || prefs.nuevos_eventos === true;
+        })
+        .map(usuario => ({
+          usuario_id: usuario.id,
+          tipo: 'nuevo_evento',
+          mensaje: `¡Nuevo evento disponible: ${evento.nombre}! 📅 ${new Date(evento.fecha_inicio).toLocaleDateString()}`,
+          leida: false,
+        }));
+
+      // 3. Crear notificaciones en lote
+      if (notificacionesData.length > 0) {
+        await prisma.notificacion.createMany({
+          data: notificacionesData,
+        });
+        console.log(`🔔 Se enviaron ${notificacionesData.length} notificaciones de nuevo evento.`);
+      }
+    } catch (notifError) {
+      console.error('Error enviando notificaciones:', notifError);
+      // No bloqueamos la respuesta si fallan las notificaciones
+    }
+
     return NextResponse.json(
       {
         success: true,
