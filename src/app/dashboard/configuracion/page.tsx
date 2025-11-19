@@ -46,9 +46,32 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (user?.id) {
+            loadUserProfile();
             loadNotificationPreferences();
         }
-    }, [user]);
+    }, [user?.id]);
+
+    const loadUserProfile = async () => {
+        try {
+            const response = await fetch(`/api/users/${user.id}/profile`);
+            const data = await response.json();
+            if (data.success) {
+                // Update local state
+                setProfileData({
+                    nombre: data.user.nombre || '',
+                    email: data.user.email || '',
+                    telefono: data.user.telefono || '',
+                });
+
+                // Update user object with fresh data (including photo)
+                const updatedUser = { ...user, ...data.user };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+        } catch (error) {
+            console.error('Error loading profile:', error);
+        }
+    };
 
     const loadNotificationPreferences = async () => {
         try {

@@ -91,12 +91,12 @@ export default function ExitoCompraPage() {
       precio: 0
     }];
 
-    setCompra({
+    const compraData = {
       reservaId: reserva.id,
       evento: {
         nombre: reserva.evento?.nombre || 'Evento',
-        fecha: reserva.evento?.fecha_inicio || '',
-        lugar: reserva.evento?.ubicacion || '',
+        fecha: reserva.evento?.fecha_inicio || reserva.evento?.fecha || new Date().toISOString(),
+        lugar: reserva.evento?.ubicacion || reserva.evento?.lugar || '',
       },
       entradas,
       numeroOrden: reserva.numero_orden,
@@ -108,7 +108,10 @@ export default function ExitoCompraPage() {
       qrDataURL: dataUrl,
       qrString: !dataUrl ? rawQR : null,
       estado_transaccion: reserva.pagos?.[0]?.estado_transaccion || null,
-    });
+    };
+
+    setCompra(compraData);
+    localStorage.setItem('ultimaCompra', JSON.stringify(compraData));
 
     setLoading(false);
 
