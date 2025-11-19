@@ -11,16 +11,12 @@ export async function GET(req: Request) {
     const categoria = searchParams.get('categoria');
     const estado = searchParams.get('estado') || 'programado';
     const organizador_id = searchParams.get('organizador_id');
-    const limit = searchParams.get('limit'); // ✅ NUEVO
+    const limit = searchParams.get('limit');
 
     const eventos = await prisma.evento.findMany({
       where: {
         ...(categoria && { categoria_id: categoria }),
         estado,
-        // ← ELIMINA O COMENTA EL FILTRO DE FECHA:
-        // fecha_inicio: {
-        //   gte: new Date(),
-        // },
       },
       include: {
         categoria: true,
@@ -36,11 +32,17 @@ export async function GET(req: Request) {
             cantidad_boletos: true,
           },
         },
+        tiposEntrada: { // ✅ INCLUIR TIPOS DE ENTRADA
+          select: {
+            precio: true,
+            disponible: true,
+          },
+        },
       },
       orderBy: {
         fecha_inicio: 'asc',
       },
-      ...(limit && { take: parseInt(limit) }), // ✅ NUEVO: Limitar resultados
+      ...(limit && { take: parseInt(limit) }),
     });
 
     // Calcula estadísticas para cada evento
@@ -51,9 +53,17 @@ export async function GET(req: Request) {
       );
 
       const disponibilidad = evento.aforo_max - totalReservas;
-      const porcentajeOcupacion = evento.aforo_max > 0 
-        ? Math.round((totalReservas / evento.aforo_max) * 100) 
+      const porcentajeOcupacion = evento.aforo_max > 0
+        ? Math.round((totalReservas / evento.aforo_max) * 100)
         : 0;
+
+      // ✅ CALCULAR PRECIO MÍNIMO
+      let precioMinimo = 0;
+      if (evento.tiposEntrada.length > 0) {
+        // Filtrar solo disponibles si se desea, o mostrar el menor de todos
+        const precios = evento.tiposEntrada.map(t => Number(t.precio));
+        precioMinimo = Math.min(...precios);
+      }
 
       return {
         id: evento.id,
@@ -63,15 +73,16 @@ export async function GET(req: Request) {
         fecha_fin: evento.fecha_fin,
         ubicacion: evento.ubicacion,
         aforo_max: evento.aforo_max,
-        imagen_url: evento.imagen_url, // <--- ¡ESTO ES CLAVE!
+        imagen_url: evento.imagen_url,
         categoria: evento.categoria.nombre,
         categoria_id: evento.categoria_id,
         organizador: evento.organizador.nombre,
-        organizador_id: evento.organizador_id, // ← ESTO FALTABA
+        organizador_id: evento.organizador_id,
         estado: evento.estado,
         boletos_vendidos: totalReservas,
         boletos_disponibles: disponibilidad,
         porcentajeOcupacion,
+        precio_base: precioMinimo, // ✅ USAR PRECIO CALCULADO
       };
     });
 

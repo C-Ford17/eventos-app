@@ -2,13 +2,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Calendar, MapPin, Users, Image as ImageIcon, Plus, Trash2, ArrowLeft, Upload, DollarSign, Type } from 'lucide-react';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function CrearEventoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categorias, setCategorias] = useState<any[]>([]);
-  
+
   // Estados del formulario
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -17,8 +19,8 @@ export default function CrearEventoPage() {
   const [ubicacion, setUbicacion] = useState('');
   const [aforo, setAforo] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [imagenUrl, setImagenUrl] = useState(''); // ✅ NUEVO
-  const [imagenPreview, setImagenPreview] = useState(''); // ✅ NUEVO
+  const [imagenUrl, setImagenUrl] = useState('');
+  const [imagenPreview, setImagenPreview] = useState('');
 
   const [tiposEntrada, setTiposEntrada] = useState([
     { nombre: 'General', precio: '' },
@@ -36,31 +38,26 @@ export default function CrearEventoPage() {
       .catch(err => console.error('Error cargando categorías:', err));
   }, []);
 
-  // ✅ NUEVO: Manejar selección de imagen
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       alert('Por favor selecciona una imagen válida (JPG, PNG, etc.)');
       return;
     }
 
-    // Validar tamaño (máx 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('La imagen no debe superar los 5MB');
       return;
     }
 
-    // Preview local
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagenPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
 
-    // Subir a Cloudinary
     setUploadingImage(true);
     try {
       const formData = new FormData();
@@ -75,7 +72,6 @@ export default function CrearEventoPage() {
 
       if (data.success) {
         setImagenUrl(data.url);
-        console.log('✅ Imagen subida:', data.url);
       } else {
         alert('Error al subir imagen: ' + (data.error || 'Error desconocido'));
         setImagenPreview('');
@@ -89,12 +85,11 @@ export default function CrearEventoPage() {
     }
   };
 
-  // ✅ NUEVO: Remover imagen
   const handleRemoveImage = () => {
     setImagenPreview('');
     setImagenUrl('');
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -114,7 +109,7 @@ export default function CrearEventoPage() {
           aforo_max: parseInt(aforo),
           categoria_id: categoria,
           organizador_id: user.id,
-          imagen_url: imagenUrl || null, // ✅ NUEVO: Incluir URL de imagen
+          imagen_url: imagenUrl || null,
         }),
       });
 
@@ -124,7 +119,6 @@ export default function CrearEventoPage() {
         throw new Error(result.error || 'Error al crear evento');
       }
 
-      // Crear tipos de entrada
       for (const tipo of tiposEntrada) {
         if (tipo.nombre && tipo.precio) {
           await fetch('/api/tipos-entrada', {
@@ -153,67 +147,68 @@ export default function CrearEventoPage() {
     setTiposEntrada([...tiposEntrada, { nombre: '', precio: '' }]);
   };
 
+  const eliminarTipoEntrada = (index: number) => {
+    const nuevos = [...tiposEntrada];
+    nuevos.splice(index, 1);
+    setTiposEntrada(nuevos);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">Crear Nuevo Evento</h1>
+    <div className="max-w-5xl mx-auto pb-10">
+      <div className="flex items-center gap-4 mb-8">
         <button
-          type="button"
           onClick={() => router.back()}
-          className="text-gray-400 hover:text-white transition"
+          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
         >
-          ← Volver
+          <ArrowLeft size={20} />
         </button>
+        <div>
+          <h1 className="text-3xl font-bold text-white">Crear Nuevo Evento</h1>
+          <p className="text-gray-400 text-sm mt-1">Configura los detalles de tu próximo gran evento</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-neutral-800 p-6 rounded-lg space-y-6">
-        {/* ✅ NUEVO: Sección de imagen */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Imagen del Evento (Opcional)
-          </label>
-          
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Sección de Imagen */}
+        <div className="bg-[#1a1a1a]/60 border border-white/10 p-8 rounded-2xl">
+          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+            <ImageIcon className="text-blue-500" size={24} />
+            Imagen del Evento
+          </h2>
+
           {imagenPreview ? (
-            <div className="relative">
-              <img 
-                src={imagenPreview} 
-                alt="Preview del evento" 
-                className="w-full h-64 object-cover rounded-lg"
+            <div className="relative group rounded-2xl overflow-hidden border border-white/10">
+              <img
+                src={imagenPreview}
+                alt="Preview del evento"
+                className="w-full h-80 object-cover"
               />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                disabled={uploadingImage}
-                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition disabled:opacity-50"
-                title="Eliminar imagen"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  disabled={uploadingImage}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-transform transform hover:scale-105"
+                >
+                  <Trash2 size={18} />
+                  Eliminar imagen
+                </button>
+              </div>
               {uploadingImage && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
+                  <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p className="text-white font-medium">Subiendo imagen...</p>
                 </div>
               )}
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-neutral-700 rounded-lg cursor-pointer hover:border-blue-500 transition bg-neutral-900/50">
+            <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                {uploadingImage ? (
-                  <>
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-3"></div>
-                    <p className="text-gray-400 text-sm">Subiendo imagen...</p>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <p className="text-gray-400 text-sm mb-2">Click para subir imagen del evento</p>
-                    <p className="text-gray-500 text-xs">PNG, JPG, WEBP (Máx. 5MB)</p>
-                  </>
-                )}
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </div>
+                <p className="text-lg font-medium text-white mb-2">Arrastra una imagen o haz click aquí</p>
+                <p className="text-gray-500 text-sm">Soporta JPG, PNG, WEBP (Máx. 5MB)</p>
               </div>
               <input
                 type="file"
@@ -224,174 +219,209 @@ export default function CrearEventoPage() {
               />
             </label>
           )}
-          <p className="text-gray-500 text-xs mt-2">
-            💡 Recomendado: 1200x630px para mejor visualización
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Nombre del Evento *
-            </label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: Tech Summit 2024"
-            />
-          </div>
+        {/* Detalles Generales */}
+        <div className="bg-[#1a1a1a]/60 border border-white/10 p-8 rounded-2xl">
+          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+            <Type className="text-purple-500" size={24} />
+            Detalles Generales
+          </h2>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Categoría *
-            </label>
-            <select
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Selecciona una categoría</option>
-              {categorias.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Descripción *
-          </label>
-          <textarea
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            required
-            rows={4}
-            className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Describe tu evento..."
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Fecha y Hora de Inicio *
-            </label>
-            <input
-              type="datetime-local"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Fecha y Hora de Fin (opcional)
-            </label>
-            <input
-              type="datetime-local"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-              className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Ubicación *
-            </label>
-            <input
-              type="text"
-              value={ubicacion}
-              onChange={(e) => setUbicacion(e.target.value)}
-              required
-              className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: Centro de Convenciones"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Aforo Máximo *
-            </label>
-            <input
-              type="number"
-              value={aforo}
-              onChange={(e) => setAforo(e.target.value)}
-              required
-              min="1"
-              className="w-full px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: 200"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Tipos de Entrada
-          </label>
-          {tiposEntrada.map((tipo, index) => (
-            <div key={index} className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Nombre del Evento *</label>
               <input
                 type="text"
-                value={tipo.nombre}
-                onChange={(e) => {
-                  const nuevos = [...tiposEntrada];
-                  nuevos[index].nombre = e.target.value;
-                  setTiposEntrada(nuevos);
-                }}
-                placeholder="Ej: VIP"
-                className="px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                value={tipo.precio}
-                onChange={(e) => {
-                  const nuevos = [...tiposEntrada];
-                  nuevos[index].precio = e.target.value;
-                  setTiposEntrada(nuevos);
-                }}
-                placeholder="Precio"
-                min="0"
-                step="0.01"
-                className="px-3 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-600"
+                placeholder="Ej: Tech Summit 2024"
               />
             </div>
-          ))}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Categoría *</label>
+              <CustomDropdown
+                options={[
+                  { value: '', label: 'Selecciona una categoría' },
+                  ...categorias.map(cat => ({ value: cat.id, label: cat.nombre }))
+                ]}
+                value={categoria}
+                onChange={(value) => setCategoria(value)}
+                placeholder="Selecciona una categoría"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300">Descripción *</label>
+            <textarea
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              required
+              rows={4}
+              className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-600 resize-none"
+              placeholder="Describe los detalles de tu evento..."
+            />
+          </div>
+        </div>
+
+        {/* Fecha y Ubicación */}
+        <div className="bg-[#1a1a1a] border border-white/10 p-8 rounded-2xl">
+          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+            <Calendar className="text-orange-500" size={24} />
+            Fecha y Ubicación
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Inicio *</label>
+              <input
+                type="datetime-local"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all [color-scheme:dark]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Fin (Opcional)</label>
+              <input
+                type="datetime-local"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all [color-scheme:dark]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                <MapPin size={16} /> Ubicación *
+              </label>
+              <input
+                type="text"
+                value={ubicacion}
+                onChange={(e) => setUbicacion(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-600"
+                placeholder="Ej: Centro de Convenciones"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                <Users size={16} /> Aforo Máximo *
+              </label>
+              <input
+                type="number"
+                value={aforo}
+                onChange={(e) => setAforo(e.target.value)}
+                required
+                min="1"
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-600"
+                placeholder="Ej: 200"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Tipos de Entrada */}
+        <div className="bg-[#1a1a1a] border border-white/10 p-8 rounded-2xl">
+          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+            <DollarSign className="text-green-500" size={24} />
+            Tipos de Entrada
+          </h2>
+
+          <div className="space-y-4">
+            {tiposEntrada.map((tipo, index) => (
+              <div key={index} className="flex gap-4 items-start animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex-1 space-y-2">
+                  <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider">Nombre</label>
+                  <input
+                    type="text"
+                    value={tipo.nombre}
+                    onChange={(e) => {
+                      const nuevos = [...tiposEntrada];
+                      nuevos[index].nombre = e.target.value;
+                      setTiposEntrada(nuevos);
+                    }}
+                    placeholder="Ej: VIP"
+                    className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+                <div className="w-32 space-y-2">
+                  <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider">Precio</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={tipo.precio}
+                      onChange={(e) => {
+                        const nuevos = [...tiposEntrada];
+                        nuevos[index].precio = e.target.value;
+                        setTiposEntrada(nuevos);
+                      }}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      className="w-full pl-8 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="pt-8">
+                  <button
+                    type="button"
+                    onClick={() => eliminarTipoEntrada(index)}
+                    disabled={tiposEntrada.length === 1}
+                    className="p-3 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <button
             type="button"
             onClick={agregarTipoEntrada}
-            className="text-blue-400 hover:text-blue-300 text-sm font-medium"
+            className="mt-6 flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors px-4 py-2 rounded-lg hover:bg-blue-500/10"
           >
-            + Agregar tipo de entrada
+            <Plus size={18} />
+            Agregar otro tipo de entrada
           </button>
         </div>
 
-        <div className="flex space-x-4">
-          <button
-            type="submit"
-            disabled={loading || uploadingImage}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 rounded font-semibold transition"
-          >
-            {loading ? 'Creando...' : uploadingImage ? 'Subiendo imagen...' : 'Crear Evento'}
-          </button>
+        {/* Botones de Acción */}
+        <div className="flex items-center justify-end gap-4 pt-4">
           <button
             type="button"
             onClick={() => router.back()}
             disabled={loading || uploadingImage}
-            className="px-6 bg-neutral-700 hover:bg-neutral-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white py-3 rounded font-semibold transition"
+            className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-all border border-white/5 disabled:opacity-50"
           >
             Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={loading || uploadingImage}
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Creando...
+              </>
+            ) : uploadingImage ? (
+              'Subiendo imagen...'
+            ) : (
+              'Crear Evento'
+            )}
           </button>
         </div>
       </form>

@@ -2,6 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import CustomDropdown from '@/components/CustomDropdown';
 
 interface Servicio {
   id: string;
@@ -105,17 +106,21 @@ export default function ServiciosContratadosPage() {
 
       {/* Filtro por estado */}
       <div className="bg-neutral-800 p-4 rounded-lg">
-        <select
-          value={estadoFiltro}
-          onChange={(e) => setEstadoFiltro(e.target.value)}
-          className="px-4 py-2 bg-neutral-900 text-white rounded border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="todos">Todos los estados</option>
-          <option value="pendiente">Pendientes</option>
-          <option value="aceptado">Aceptados</option>
-          <option value="rechazado">Rechazados</option>
-          <option value="completado">Completados</option>
-        </select>
+        <div className="bg-neutral-800 p-4 rounded-lg">
+          <CustomDropdown
+            options={[
+              { value: 'todos', label: 'Todos los estados' },
+              { value: 'pendiente', label: 'Pendientes' },
+              { value: 'aceptado', label: 'Aceptados' },
+              { value: 'rechazado', label: 'Rechazados' },
+              { value: 'completado', label: 'Completados' }
+            ]}
+            value={estadoFiltro}
+            onChange={(value) => setEstadoFiltro(value)}
+            placeholder="Filtrar por estado"
+            className="w-full"
+          />
+        </div>
       </div>
 
       {/* Servicios agrupados por evento */}

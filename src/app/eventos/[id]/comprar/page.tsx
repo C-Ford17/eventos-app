@@ -2,7 +2,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-
 interface TipoEntrada {
   id: string;
   nombre: string;
@@ -10,17 +9,14 @@ interface TipoEntrada {
   disponible: boolean;
   cantidad?: number; // añadido para control local
 }
-
 export default function SeleccionEntradasPage() {
   const params = useParams();
   const router = useRouter();
   const eventoId = params.id as string;
-
   const [evento, setEvento] = useState<any>(null);
   const [entradas, setEntradas] = useState<TipoEntrada[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-
   // Verificar usuario
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -30,11 +26,9 @@ export default function SeleccionEntradasPage() {
       router.push('/login');
     }
   }, [router]);
-
   // Cargar evento y entradas
   useEffect(() => {
     if (!eventoId) return;
-
     Promise.all([
       fetch(`/api/eventos/${eventoId}`).then(res => res.json()),
       fetch(`/api/eventos/${eventoId}/entradas`).then(res => res.json()),
@@ -45,7 +39,6 @@ export default function SeleccionEntradasPage() {
         } else {
           router.push('/explorar');
         }
-
         if (entradasData.success) {
           // Agregar campo 'cantidad' para control local
           setEntradas(
@@ -56,7 +49,6 @@ export default function SeleccionEntradasPage() {
       .catch(() => router.push('/explorar'))
       .finally(() => setLoading(false));
   }, [eventoId, router]);
-
   const handleIncrement = (id: string) => {
     setEntradas(
       entradas.map((e) =>
@@ -64,7 +56,6 @@ export default function SeleccionEntradasPage() {
       )
     );
   };
-
   const handleDecrement = (id: string) => {
     setEntradas(
       entradas.map((e) =>
@@ -74,7 +65,6 @@ export default function SeleccionEntradasPage() {
       )
     );
   };
-
   const subtotal = entradas.reduce(
     (sum, e) => sum + Number(e.precio) * (e.cantidad || 0),
     0
@@ -82,13 +72,11 @@ export default function SeleccionEntradasPage() {
   const cargoServicio = subtotal * 0.1;
   const total = subtotal + cargoServicio;
   const totalEntradas = entradas.reduce((sum, e) => sum + (e.cantidad || 0), 0);
-
   const handleContinuar = () => {
     if (totalEntradas === 0) {
       alert('Selecciona al menos una entrada');
       return;
     }
-
     const seleccion = {
       evento,
       entradas: entradas.filter((e) => (e.cantidad || 0) > 0),
@@ -99,7 +87,6 @@ export default function SeleccionEntradasPage() {
     localStorage.setItem('compraActual', JSON.stringify(seleccion));
     router.push(`/eventos/${eventoId}/comprar/confirmacion`);
   };
-
   if (loading || !evento) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -107,7 +94,6 @@ export default function SeleccionEntradasPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-950 py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -143,7 +129,6 @@ export default function SeleccionEntradasPage() {
             </span>
           </div>
         </div>
-
         {/* Header */}
         <div className="mb-8">
           <button
@@ -178,7 +163,6 @@ export default function SeleccionEntradasPage() {
             | {evento.ubicacion}
           </p>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Lista de entradas */}
           <div className="lg:col-span-2 space-y-4">
@@ -214,7 +198,6 @@ export default function SeleccionEntradasPage() {
                         </div>
                       </div>
                     </div>
-
                     {/* Selector de cantidad */}
                     <div className="flex items-center space-x-3 ml-4">
                       <button
@@ -246,14 +229,12 @@ export default function SeleccionEntradasPage() {
               </div>
             )}
           </div>
-
           {/* Resumen de compra */}
           <div className="lg:col-span-1">
             <div className="bg-neutral-800 p-6 rounded-lg sticky top-4">
               <h2 className="text-xl font-semibold text-white mb-4">
                 Resumen de tu compra
               </h2>
-
               {totalEntradas > 0 ? (
                 <>
                   {entradas
@@ -274,26 +255,20 @@ export default function SeleccionEntradasPage() {
                         </span>
                       </div>
                     ))}
-
                   <div className="border-t border-neutral-700 my-4"></div>
-
                   <div className="flex justify-between text-gray-300 mb-2">
                     <span>Subtotal</span>
                     <span>${subtotal.toLocaleString('es-CO')}</span>
                   </div>
-
                   <div className="flex justify-between text-gray-300 mb-2">
                     <span>Cargos por servicio</span>
                     <span>${cargoServicio.toLocaleString('es-CO')}</span>
                   </div>
-
                   <div className="border-t border-neutral-700 my-4"></div>
-
                   <div className="flex justify-between text-white text-xl font-bold mb-6">
                     <span>Total (COP)</span>
                     <span>${total.toLocaleString('es-CO')}</span>
                   </div>
-
                   <button
                     onClick={handleContinuar}
                     className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
