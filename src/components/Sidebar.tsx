@@ -58,6 +58,7 @@ export default function Sidebar() {
                 return [
                     ...commonOptions,
                     { label: 'Mis Servicios', href: '/dashboard/proveedor/servicios', icon: Briefcase },
+                    { label: 'Agregar Servicio', href: '/dashboard/proveedor/servicios/crear', icon: PlusCircle },
                     { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes', icon: FileText },
                     { label: 'Historial', href: '/dashboard/proveedor/historial', icon: History },
                 ];
