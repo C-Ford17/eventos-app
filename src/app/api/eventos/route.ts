@@ -12,9 +12,11 @@ export async function GET(req: Request) {
     const estado = searchParams.get('estado') || 'programado';
     const organizador_id = searchParams.get('organizador_id');
     const limit = searchParams.get('limit');
+    const id = searchParams.get('id'); // ✅ Nuevo filtro por ID
 
     const eventos = await prisma.evento.findMany({
       where: {
+        ...(id && { id }), // Filtrar por ID si existe
         ...(categoria && { categoria_id: categoria }),
         estado,
       },

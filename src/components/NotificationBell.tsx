@@ -68,9 +68,29 @@ export default function NotificationBell({ userId }: { userId: string }) {
 
             {show && (
                 <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShow(false)} />
-                    <div className="absolute right-0 mt-2 w-80 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200 max-h-[400px] overflow-hidden flex flex-col">
-                        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-[#1a1a1a]">
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none z-40"
+                        onClick={() => setShow(false)}
+                    />
+
+                    {/* Dropdown/Bottom Sheet */}
+                    <div className={`
+                        fixed md:absolute
+                        bottom-0 md:bottom-auto md:top-full md:mt-2
+                        left-0 md:left-auto
+                        right-0 md:right-0
+                        w-full md:w-80
+                        max-h-[70vh] md:max-h-[400px]
+                        bg-[#1a1a1a] border border-white/10
+                        rounded-t-2xl md:rounded-xl
+                        shadow-2xl z-50
+                        transition-all duration-200
+                        ${show ? 'translate-y-0 opacity-100' : 'translate-y-full md:translate-y-0 opacity-0'}
+                        overflow-hidden flex flex-col
+                    `}>
+                        {/* Header */}
+                        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-[#1a1a1a] shrink-0">
                             <h3 className="text-sm font-semibold text-white">Notificaciones</h3>
                             <button
                                 onClick={fetchNotifications}
@@ -80,6 +100,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
                             </button>
                         </div>
 
+                        {/* Content */}
                         <div className="overflow-y-auto flex-1 custom-scrollbar">
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center text-gray-500 text-sm">

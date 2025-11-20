@@ -157,10 +157,10 @@ export default function MisEventosPage() {
         <div className="grid grid-cols-1 gap-6">
           {eventosFiltrados.map((evento) => (
             <div key={evento.id} className="group bg-[#1a1a1a]/60 border border-white/10 rounded-2xl p-6 hover:border-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/5">
-              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+              <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
                 {/* Info Principal */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                <div className="flex-1 w-full min-w-0">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium border ${evento.estado === 'programado'
                         ? 'bg-green-500/10 text-green-400 border-green-500/20'
@@ -177,17 +177,17 @@ export default function MisEventosPage() {
                     </span>
                   </div>
 
-                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                  <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors truncate">
                     {evento.nombre}
                   </h3>
 
                   <div className="flex items-center gap-2 text-gray-400 text-sm mb-6">
-                    <MapPin size={16} className="text-blue-500" />
-                    {evento.ubicacion}
+                    <MapPin size={16} className="text-blue-500 shrink-0" />
+                    <span className="truncate">{evento.ubicacion}</span>
                   </div>
 
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-3 gap-4 max-w-lg">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg">
                     <div className="bg-white/5 rounded-xl p-3 border border-white/5">
                       <p className="text-gray-500 text-xs mb-1">Reservas</p>
                       <div className="flex items-end gap-2">
@@ -203,7 +203,7 @@ export default function MisEventosPage() {
                       <p className="text-gray-500 text-xs mb-1">Ocupación</p>
                       <div className="flex items-center gap-2">
                         <span className="text-xl font-bold text-white">{evento.porcentajeOcupacion || 0}%</span>
-                        <div className="w-full bg-white/10 h-1.5 rounded-full flex-1 min-w-[40px]">
+                        <div className="w-full bg-white/10 h-1.5 rounded-full flex-1 min-w-[40px] overflow-hidden">
                           <div
                             className="bg-blue-500 h-full rounded-full"
                             style={{ width: `${Math.min(evento.porcentajeOcupacion || 0, 100)}%` }}
@@ -215,18 +215,18 @@ export default function MisEventosPage() {
                 </div>
 
                 {/* Acciones */}
-                <div className="flex flex-row md:flex-col gap-3 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto mt-4 lg:mt-0">
                   <button
                     onClick={() => router.push(`/dashboard/organizador/eventos/${evento.id}/editar`)}
                     disabled={evento.estado !== 'programado'}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-white/5"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-white/5 whitespace-nowrap"
                   >
                     <Edit size={16} />
                     Editar
                   </button>
                   <button
                     onClick={() => router.push(`/dashboard/organizador/eventos/${evento.id}/reservas`)}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-sm font-medium border border-white/5"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-sm font-medium border border-white/5 whitespace-nowrap"
                   >
                     <Eye size={16} />
                     Reservas
@@ -234,7 +234,7 @@ export default function MisEventosPage() {
                   <button
                     onClick={() => handleCancelarEvento(evento.id)}
                     disabled={evento.estado !== 'programado'}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/10"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/10 whitespace-nowrap"
                   >
                     <XCircle size={16} />
                     Cancelar

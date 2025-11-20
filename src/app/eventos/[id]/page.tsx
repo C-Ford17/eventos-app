@@ -1,9 +1,10 @@
 // src/app/eventos/[id]/page.tsx
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, MapPin, Users, Ticket, Clock, ArrowLeft, Share2, Heart, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Users, Ticket, Clock, ArrowLeft, Share2, Heart, TrendingUp, Check } from 'lucide-react';
+import ShareMenu from '@/components/ShareMenu';
 
 export default function DetalleEventoPage() {
   const params = useParams();
@@ -12,6 +13,10 @@ export default function DetalleEventoPage() {
   const [evento, setEvento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const shareButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -32,6 +37,21 @@ export default function DetalleEventoPage() {
       .finally(() => setLoading(false));
   }, [eventoId]);
 
+  // Check if event is favorited
+  useEffect(() => {
+    if (user && eventoId && user.tipo_usuario === 'asistente') {
+      fetch(`/api/favoritos?usuario_id=${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const isFav = data.favoritos.some((fav: any) => fav.evento_id === eventoId);
+            setIsFavorite(isFav);
+          }
+        })
+        .catch(err => console.error('Error checking favorite:', err));
+    }
+  }, [user, eventoId]);
+
   const handleComprar = () => {
     if (!user) {
       localStorage.setItem('redirectAfterLogin', `/eventos/${eventoId}`);
@@ -45,6 +65,59 @@ export default function DetalleEventoPage() {
     }
 
     router.push(`/eventos/${eventoId}/comprar`);
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await fetch(`/api/favoritos?usuario_id=${user.id}&evento_id=${eventoId}`, {
+          method: 'DELETE',
+        });
+        setIsFavorite(false);
+      } else {
+        await fetch('/api/favoritos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario_id: user.id, evento_id: eventoId }),
+        });
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const copyToClipboard = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+        setShowShareMenu(false);
+      }, 2000);
+    });
+  };
+
+  const shareToWhatsApp = () => {
+    const url = window.location.href;
+    const text = `¡Mira este evento! ${evento?.nombre}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+  };
+
+  const shareToFacebook = () => {
+    const url = window.location.href;
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+  };
+
+  const shareToTwitter = () => {
+    const url = window.location.href;
+    const text = `¡Mira este evento! ${evento?.nombre}`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
   };
 
   if (loading) {
@@ -125,12 +198,39 @@ export default function DetalleEventoPage() {
               </div>
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <button className="p-3 bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/30 rounded-xl transition-all">
-                  <Share2 size={20} className="text-white" />
-                </button>
-                <button className="p-3 bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/30 rounded-xl transition-all">
-                  <Heart size={20} className="text-white" />
-                </button>
+                <div className="relative">
+                  <button
+                    ref={shareButtonRef}
+                    onClick={() => setShowShareMenu(!showShareMenu)}
+                    className="p-3 bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/30 rounded-xl transition-all"
+                    aria-label="Compartir evento"
+                  >
+                    <Share2 size={20} className="text-white" />
+                  </button>
+
+                  <ShareMenu
+                    isOpen={showShareMenu}
+                    onClose={() => setShowShareMenu(false)}
+                    shareButtonRef={shareButtonRef}
+                    evento={evento}
+                  />
+                </div>
+
+                {user && user.tipo_usuario === 'asistente' && (
+                  <button
+                    onClick={handleToggleFavorite}
+                    className={`p-3 backdrop-blur-md border rounded-xl transition-all ${isFavorite
+                      ? 'bg-red-500/20 border-red-500/50 hover:bg-red-500/30'
+                      : 'bg-white/20 border-white/30 hover:bg-white/30'
+                      }`}
+                    aria-label={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                  >
+                    <Heart
+                      size={20}
+                      className={`transition-all ${isFavorite ? 'text-red-400 fill-red-400' : 'text-white'}`}
+                    />
+                  </button>
+                )}
               </div>
             </div>
           </div>

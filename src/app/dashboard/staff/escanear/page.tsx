@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import jsQR from 'jsqr';
 import { Camera, Upload, Search, CheckCircle, XCircle, QrCode, AlertCircle } from 'lucide-react';
-import EventoSelector from '@/components/EventoSelector';
 import { useStaff } from '@/contexts/StaffContext';
 
 // Importa el escáner de forma dinámica para evitar problemas de SSR
@@ -216,8 +215,6 @@ export default function EscanearEntradasPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      {/* ✅ Componente EventoSelector */}
-      <EventoSelector />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Visor de cámara */}
@@ -228,13 +225,14 @@ export default function EscanearEntradasPage() {
                 <Camera size={20} className="text-blue-400" />
                 Visor de Cámara
               </h2>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg font-medium transition border border-white/5"
                 >
                   <Upload size={16} />
-                  Subir Imagen
+                  <span className="hidden sm:inline">Subir Imagen</span>
+                  <span className="sm:hidden">Subir</span>
                 </button>
                 <button
                   onClick={handleActivarCamara}
@@ -295,7 +293,7 @@ export default function EscanearEntradasPage() {
                 <QrCode size={18} className="text-gray-400" />
                 Validación Manual
               </h3>
-              <form onSubmit={handleValidarManual} className="flex gap-3">
+              <form onSubmit={handleValidarManual} className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
                   value={codigoManual}
@@ -307,7 +305,7 @@ export default function EscanearEntradasPage() {
                 <button
                   type="submit"
                   disabled={validando}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition disabled:opacity-50 shadow-lg shadow-blue-600/20"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition disabled:opacity-50 shadow-lg shadow-blue-600/20 whitespace-nowrap"
                 >
                   Validar
                 </button>
@@ -388,7 +386,7 @@ export default function EscanearEntradasPage() {
                       </p>
                       <p className="text-gray-500 text-xs">{actividad.hora}</p>
                       {actividad.mensaje && (
-                        <p className="text-gray-400 text-xs mt-1 bg-black/20 p-1.5 rounded border border-white/5">
+                        <p className="text-gray-400 text-xs mt-1 bg-black/20 p-1.5 rounded border border-white/5 break-words">
                           {actividad.mensaje}
                         </p>
                       )}

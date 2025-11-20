@@ -15,7 +15,7 @@ export default function EventoSelector() {
             Seleccionar Evento
           </label>
           <div className="relative">
-            <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none z-10" />
+            <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none z-10 " />
             <CustomDropdown
               options={[
                 { value: '', label: 'Selecciona un evento' },
@@ -40,8 +40,8 @@ export default function EventoSelector() {
                 <MapPin size={20} />
               </div>
               <div>
-                <p className="text-gray-400 text-xs">Ubicación</p>
-                <p className="text-white text-sm font-medium truncate">{eventoActual.ubicacion}</p>
+                <p className="text-gray-400 text-xs ">Ubicación</p>
+                <p className="text-white text-sm font-medium">{eventoActual.ubicacion}</p>
               </div>
             </div>
 

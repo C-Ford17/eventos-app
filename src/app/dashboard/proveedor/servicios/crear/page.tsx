@@ -94,7 +94,7 @@ export default function CrearServicioPage() {
       </div>
 
       {/* Main Form Card */}
-      <div className="bg-[#1a1a1a]/40 border border-white/5 rounded-3xl p-8 shadow-xl backdrop-blur-sm">
+      <div className="bg-[#1a1a1a]/40 border border-white/5 rounded-3xl p-4 md:p-8 shadow-xl backdrop-blur-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Nombre del Servicio */}

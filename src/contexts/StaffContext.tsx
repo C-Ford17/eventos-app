@@ -26,16 +26,33 @@ export function StaffProvider({ children }: { children: ReactNode }) {
 
   const cargarEventos = async () => {
     try {
-      const response = await fetch('/api/eventos?estado=programado');
-      const data = await response.json();
-      
-      if (data.success && data.eventos.length > 0) {
-        setEventos(data.eventos);
-        
-        // Seleccionar primer evento si no hay uno seleccionado
-        if (!eventoSeleccionado && data.eventos.length > 0) {
-          const saved = localStorage.getItem('staff_evento_seleccionado');
-          setEventoSeleccionado(saved || data.eventos[0].id);
+      // ✅ Obtener usuario del localStorage para ver su evento asignado
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+
+      const user = JSON.parse(userStr);
+
+      // Si es staff y tiene evento asignado
+      if (user.tipo_usuario === 'staff' && user.eventoStaffId) {
+        // Cargar SOLO ese evento
+        const response = await fetch(`/api/eventos?id=${user.eventoStaffId}`);
+        const data = await response.json();
+
+        if (data.success && data.eventos.length > 0) {
+          setEventos(data.eventos);
+          setEventoSeleccionado(data.eventos[0].id); // Auto-seleccionar
+        }
+      } else {
+        // Comportamiento anterior (o manejar error si no es staff)
+        // Por ahora mantenemos la carga general si no hay evento asignado (fallback)
+        const response = await fetch('/api/eventos?estado=programado');
+        const data = await response.json();
+
+        if (data.success && data.eventos.length > 0) {
+          setEventos(data.eventos);
+          if (!eventoSeleccionado) {
+            setEventoSeleccionado(data.eventos[0].id);
+          }
         }
       }
     } catch (error) {

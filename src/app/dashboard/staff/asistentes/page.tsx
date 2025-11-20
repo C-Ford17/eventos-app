@@ -2,8 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useStaff } from '@/contexts/StaffContext';
-import EventoSelector from '@/components/EventoSelector';
-import { Search, Filter, Download, CheckCircle, XCircle, Users, Mail, Ticket, ChevronDown } from 'lucide-react';
+import { Search, Filter, Download, CheckCircle, XCircle, Users, Mail, Ticket, ChevronDown, Calendar, Clock } from 'lucide-react';
 
 interface Asistente {
   id: string;
@@ -17,7 +16,7 @@ interface Asistente {
 }
 
 export default function ListaAsistentesPage() {
-  const { eventoSeleccionado } = useStaff();
+  const { eventoSeleccionado, eventoActual } = useStaff();
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [asistentes, setAsistentes] = useState<Asistente[]>([]);
@@ -67,8 +66,34 @@ export default function ListaAsistentesPage() {
         <h1 className="text-3xl font-bold text-white">Lista de Asistentes</h1>
       </div>
 
-      {/* Selector de evento */}
-      <EventoSelector />
+      {/* Detalles del Evento */}
+      {eventoActual && (
+        <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 shrink-0">
+              <Calendar size={24} />
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Evento Activo</p>
+              <h2 className="text-xl font-bold text-white">{eventoActual.nombre}</h2>
+              <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Clock size={14} />
+                  {new Date(eventoActual.fecha_inicio).toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users size={14} />
+                  {eventoActual.aforo_max} aforo
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -138,7 +163,8 @@ export default function ListaAsistentesPage() {
         <>
           {/* Tabla de asistentes */}
           <div className="bg-[#1a1a1a]/60 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
@@ -211,6 +237,62 @@ export default function ListaAsistentesPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4 p-4">
+              {asistentesFiltrados.map((asistente) => (
+                <div key={asistente.id} className="bg-white/5 rounded-xl p-4 border border-white/5 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                        {asistente.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-white font-bold truncate">{asistente.nombre}</h3>
+                        <div className="flex items-center gap-1 text-gray-400 text-xs">
+                          <Mail size={12} className="shrink-0" />
+                          <span className="truncate">{asistente.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {asistente.estado_validacion === 'validado' ? (
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 text-xs rounded-lg font-medium">
+                        Validado
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs rounded-lg font-medium">
+                        Pendiente
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="bg-black/20 p-2 rounded-lg">
+                      <span className="text-gray-500 text-xs block mb-1">Boletos</span>
+                      <div className="flex items-center gap-1 text-white">
+                        <Ticket size={14} className="text-purple-400" />
+                        {asistente.cantidad_boletos}
+                      </div>
+                    </div>
+                    <div className="bg-black/20 p-2 rounded-lg">
+                      <span className="text-gray-500 text-xs block mb-1">Hora Validación</span>
+                      <span className="text-white">
+                        {asistente.fecha_validacion
+                          ? new Date(asistente.fecha_validacion).toLocaleTimeString('es-ES')
+                          : '-'
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <span className="text-xs text-gray-500 font-mono">
+                      ID: {asistente.codigo_qr.substring(0, 8)}...
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

@@ -100,23 +100,34 @@ export default function Home() {
           {/* Search Bar */}
           <form
             onSubmit={handleBuscar}
-            className="w-full max-w-2xl mx-auto relative group animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300"
+            className="w-full max-w-2xl mx-auto relative group animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 px-4 sm:px-0"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition-opacity" />
-            <div className="relative flex items-center bg-[#1a1a1a] border border-white/10 rounded-full p-2 shadow-2xl">
-              <Search className="ml-4 text-gray-400" size={20} />
+            <div className="relative flex items-center bg-[#1a1a1a] border border-white/10 rounded-full p-1.5 sm:p-2 shadow-2xl">
+              <Search className="ml-3 sm:ml-4 text-gray-400 shrink-0" size={20} />
               <input
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="flex-1 px-4 py-3 bg-transparent text-white placeholder-gray-500 focus:outline-none text-lg"
-                placeholder="Busca eventos, artistas o lugares..."
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-transparent text-white placeholder-gray-500 focus:outline-none text-base sm:text-lg w-full min-w-0"
+                placeholder="Busca eventos..."
               />
+
+              {/* Desktop Button */}
               <button
                 type="submit"
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-full transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-95"
+                className="hidden sm:block px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-full transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-95"
               >
                 Buscar
+              </button>
+
+              {/* Mobile Button */}
+              <button
+                type="submit"
+                className="sm:hidden p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-95 shrink-0"
+                aria-label="Buscar"
+              >
+                <Search size={20} />
               </button>
             </div>
           </form>

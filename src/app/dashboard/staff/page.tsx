@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useStaff } from '@/contexts/StaffContext';
-import EventoSelector from '@/components/EventoSelector';
+
 import { Users, CheckCircle, Clock, BarChart3, QrCode, FileText, Activity, Calendar } from 'lucide-react';
 
 export default function StaffPanel() {
@@ -61,22 +61,22 @@ export default function StaffPanel() {
         </p>
       </div>
 
-      <EventoSelector />
+
 
       {eventoActual && (
         <>
           {/* Evento actual */}
-          <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-500/20 p-8 rounded-3xl relative overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-500/20 p-4 md:p-8 rounded-3xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-blue-400 mb-2">
                   <Calendar size={18} />
                   <span className="text-sm font-semibold uppercase tracking-wider">Evento Activo</span>
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2">{eventoActual.nombre}</h2>
-                <p className="text-gray-300 flex items-center gap-2">
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{eventoActual.nombre}</h2>
+                <p className="text-gray-300 flex items-center gap-2 text-sm md:text-base">
                   {new Date(eventoActual.fecha_inicio).toLocaleDateString('es-ES', {
                     weekday: 'long',
                     year: 'numeric',
@@ -87,7 +87,7 @@ export default function StaffPanel() {
               </div>
               <Link
                 href="/dashboard/staff/escanear"
-                className="flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-1"
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-1 whitespace-nowrap"
               >
                 <QrCode size={20} />
                 Escanear Entradas
@@ -97,7 +97,7 @@ export default function StaffPanel() {
 
           {/* Estadísticas en tiempo real */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl">
+            <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl max-w-full min-w-0">
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400">
                   <Users size={24} />
@@ -105,7 +105,7 @@ export default function StaffPanel() {
                 <span className="text-xs font-medium text-gray-500 bg-white/5 px-2 py-1 rounded-lg">Total</span>
               </div>
               <p className="text-gray-400 text-sm mb-1">Total Reservas</p>
-              <p className="text-3xl font-bold text-white">{stats.totalReservas}</p>
+              <p className="text-3xl font-bold text-white break-words truncate min-w-0 w-full">{stats.totalReservas}</p>
             </div>
 
             <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl">
@@ -172,8 +172,8 @@ export default function StaffPanel() {
                           <Activity size={20} />
                         </div>
                       )}
-                      <div>
-                        <p className="text-white font-medium">{actividad.nombre}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-white font-medium truncate">{actividad.nombre}</p>
                         <p className="text-gray-400 text-xs">{actividad.hora}</p>
                       </div>
                     </div>

@@ -7,9 +7,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     console.log('Datos recibidos:', body);
-    
+
     const { nombre, email, password, tipo_usuario } = body; // Ahora recibe tipo_usuario
-    
+
     if (!nombre || !email || !password) {
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
@@ -40,17 +40,18 @@ export async function POST(req: Request) {
         email,
         password: hashedPassword,
         tipo_usuario: tipoFinal, // Usa el tipo seleccionado
+        eventoStaffId: tipoFinal === 'staff' ? body.evento_id : undefined, // ✅ Asignar evento si es staff
       },
     });
 
     return NextResponse.json(
-      { 
+      {
         message: 'Usuario creado exitosamente',
-        userId: user.id 
+        userId: user.id
       },
       { status: 201 }
     );
-    
+
   } catch (error: any) {
     console.error('Error completo en registro:', error);
     return NextResponse.json(

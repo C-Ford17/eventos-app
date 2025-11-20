@@ -47,7 +47,7 @@ export default function CustomDropdown({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full pl-4 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-left focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all flex items-center justify-between ${buttonClassName}`}
+                className={`w-full pl-4 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-left focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all flex items-center justify-between min-w-0 ${buttonClassName}`}
             >
                 <span className="truncate">
                     {selectedOption ? selectedOption.label : placeholder}

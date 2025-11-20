@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Menu, X, User, LogOut, LayoutDashboard, Compass, Home, Bell } from 'lucide-react';
+import { Menu, X, User, LogOut, LayoutDashboard, Compass, Home, Bell, LogIn, UserPlus } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import FavoritesButton from './FavoritesButton';
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -17,6 +18,8 @@ export default function Navbar() {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       setUser(JSON.parse(userStr));
+    } else {
+      setUser(null);
     }
 
     const handleScroll = () => {
@@ -57,10 +60,43 @@ export default function Navbar() {
               alt="Logo"
               className="w-8 h-8 rounded-lg shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all"
             />
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 hidden sm:block">
               EventPlatform
             </span>
           </Link>
+
+          {/* Mobile Navigation (Icons only) */}
+          <div className="flex md:hidden items-center gap-4">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`p-2 rounded-full transition-all ${isActive
+                    ? 'bg-white/10 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  aria-label={link.label}
+                >
+                  <Icon size={20} />
+                </Link>
+              );
+            })}
+            {user && (
+              <Link
+                href={`/dashboard/${user.tipo_usuario}`}
+                className={`p-2 rounded-full transition-all ${pathname.includes('/dashboard')
+                  ? 'bg-white/10 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                aria-label="Dashboard"
+              >
+                <LayoutDashboard size={20} />
+              </Link>
+            )}
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
@@ -97,9 +133,10 @@ export default function Navbar() {
           </div>
 
           {/* User / Auth buttons */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                {user.tipo_usuario === 'asistente' && <FavoritesButton userId={user.id} />}
                 <NotificationBell userId={user.id} />
 
                 <div className="relative">
@@ -171,18 +208,35 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Desktop Auth */}
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                  className="hidden sm:block text-sm font-medium text-gray-300 hover:text-white transition-colors"
                 >
                   Iniciar Sesión
                 </Link>
                 <Link
                   href="/registro"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-full shadow-lg shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
+                  className="hidden sm:block px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-full shadow-lg shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
                 >
                   Registrarse
+                </Link>
+
+                {/* Mobile Auth Icons */}
+                <Link
+                  href="/login"
+                  className="sm:hidden p-2 text-gray-300 hover:text-white transition-colors"
+                  aria-label="Iniciar Sesión"
+                >
+                  <LogIn size={20} />
+                </Link>
+                <Link
+                  href="/registro"
+                  className="sm:hidden p-2 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
+                  aria-label="Registrarse"
+                >
+                  <UserPlus size={20} />
                 </Link>
               </div>
             )}
