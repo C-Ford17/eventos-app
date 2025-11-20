@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+    <filter id="glass" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+    </filter>
+  </defs>
+  
+  <!-- Background Container with Gradient -->
+  <rect x="32" y="32" width="448" height="448" rx="128" fill="url(#grad1)" />
+  
+  <!-- Glass Effect Overlay (Subtle) -->
+  <rect x="32" y="32" width="448" height="448" rx="128" fill="white" fill-opacity="0.1" />
+  <path d="M32 160L480 160" stroke="white" stroke-opacity="0.1" stroke-width="2" />
+  
+  <!-- The "E" Logo -->
+  <path d="M160 128H352C369.673 128 384 142.327 384 160V160C384 177.673 369.673 192 352 192H224V224H320C337.673 224 352 238.327 352 256V256C352 273.673 337.673 288 320 288H224V320H352C369.673 320 384 334.327 384 352V352C384 369.673 369.673 384 352 384H160C142.327 384 128 369.673 128 352V160C128 142.327 142.327 128 160 128Z" fill="white" />
+  
+  <!-- Inner Shadow/Depth on E -->
+  <path d="M160 128H352C369.673 128 384 142.327 384 160V160C384 177.673 369.673 192 352 192H224V224H320C337.673 224 352 238.327 352 256V256C352 273.673 337.673 288 320 288H224V320H352C369.673 320 384 334.327 384 352V352C384 369.673 369.673 384 352 384H160C142.327 384 128 369.673 128 352V160C128 142.327 142.327 128 160 128Z" fill="black" fill-opacity="0.1" transform="translate(4, 4)" />
+
+</svg>

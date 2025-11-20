@@ -85,9 +85,11 @@ export default function Sidebar() {
                 {/* Logo Area */}
                 <div className="h-20 flex items-center px-6 border-b border-white/5">
                     <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all">
-                            E
-                        </div>
+                        <img
+                            src="/logo.svg"
+                            alt="Logo"
+                            className="w-8 h-8 rounded-lg shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all"
+                        />
                         {!isCollapsed && (
                             <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
                                 EventPlatform

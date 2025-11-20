@@ -266,9 +266,11 @@ export default function Home() {
       <footer className="py-12 px-6 md:px-20 border-t border-white/5 bg-[#050505] mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
-              E
-            </div>
+            <img
+              src="/logo.svg"
+              alt="Logo"
+              className="w-8 h-8 rounded-lg"
+            />
             <span className="text-xl font-bold text-white">EventPlatform</span>
           </div>
 
