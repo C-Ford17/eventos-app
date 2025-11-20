@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Menu, X, User, LogOut, LayoutDashboard, Compass, Home, Bell, LogIn, UserPlus } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import FavoritesButton from './FavoritesButton';
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -133,6 +134,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2 sm:gap-4">
             {user ? (
               <div className="flex items-center gap-2 sm:gap-3">
+                {user.tipo_usuario === 'asistente' && <FavoritesButton userId={user.id} />}
                 <NotificationBell userId={user.id} />
 
                 <div className="relative">

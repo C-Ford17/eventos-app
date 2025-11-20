@@ -26,6 +26,7 @@ model Usuario {
   reportes           Reporte[]
   auditorias         Auditoria[]
   notificaciones     Notificacion[]
+  favoritos          Favorito[]         @relation("UsuarioFavoritos")
 
   @@map("usuarios")
 }
@@ -64,6 +65,7 @@ model Evento {
   tiposEntrada             TipoEntrada[] // ← AGREGA ESTA LÍNEA
   productosServiciosEvento EventoProductoServicio[]
   reportes                 Reporte[]
+  favoritos                Favorito[]               @relation("EventoFavoritos")
 
   @@map("eventos")
 }
@@ -236,4 +238,18 @@ model TipoEntrada {
   credencialesAcceso CredencialAcceso[]
 
   @@map("tipos_entrada")
+}
+
+// FAVORITOS
+model Favorito {
+  id         String   @id @default(uuid())
+  usuario_id String
+  evento_id  String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation("UsuarioFavoritos", fields: [usuario_id], references: [id], onDelete: Cascade)
+  evento  Evento  @relation("EventoFavoritos", fields: [evento_id], references: [id], onDelete: Cascade)
+
+  @@unique([usuario_id, evento_id])
+  @@map("favoritos")
 }
