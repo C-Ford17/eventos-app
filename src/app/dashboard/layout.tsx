@@ -55,12 +55,9 @@ export default function DashboardLayout({
             <Menu size={24} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-lg md:text-2xl font-bold text-white">
               Bienvenido, <span className="text-blue-400">{user?.nombre?.split(' ')[0]}</span>
             </h1>
-            <p className="text-gray-400 text-sm">
-              {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
           </div>
 
           <div className="flex items-center gap-4">
