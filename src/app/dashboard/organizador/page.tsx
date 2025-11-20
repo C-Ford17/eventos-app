@@ -88,7 +88,7 @@ export default function OrganizadorPanel() {
       </div>
 
       {/* Cards de estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-[#121212] border border-white/10 p-6 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-all">
           <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl -mr-12 -mt-12 transition-all group-hover:bg-purple-500/20"></div>
           <div className="flex items-center justify-between relative z-10">
@@ -195,8 +195,8 @@ export default function OrganizadorPanel() {
                   </div>
                 </div>
                 <span className={`px-3 py-1 text-xs font-medium rounded-full border ${evento.estado === 'programado'
-                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                    : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                  ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                  : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
                   }`}>
                   {evento.estado.charAt(0).toUpperCase() + evento.estado.slice(1)}
                 </span>
