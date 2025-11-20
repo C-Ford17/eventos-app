@@ -55,8 +55,8 @@ export async function POST(req: Request) {
     const commissionPercentage = 0.10;
     const fee = Number(monto) * commissionPercentage;
 
-    preferenceData.marketplace_fee = Math.round(fee * 100) / 100; // Round to 2 decimals
-    preferenceData.notification_url = `${appUrl}/api/webhook-mercadopago?source_news=webhooks`; // Webhook para notificaciones
+    // preferenceData.marketplace_fee = Math.round(fee * 100) / 100; // Round to 2 decimals
+    // preferenceData.notification_url = `${appUrl}/api/webhook-mercadopago?source_news=webhooks`; // Webhook para notificaciones
   }
 
   console.log('Creating Preference with:', {
