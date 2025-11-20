@@ -46,6 +46,7 @@ export async function POST(req: Request) {
       pending: `${appUrl}/eventos/${eventoId}/comprar/pending`,
     },
     auto_return: 'approved',
+    binary_mode: true, // Recomended for Marketplace to avoid pending payments
   };
 
   // Si es Marketplace (vendedor conectado), agregamos marketplace_fee
@@ -54,9 +55,16 @@ export async function POST(req: Request) {
     const commissionPercentage = 0.10;
     const fee = Number(monto) * commissionPercentage;
 
-    preferenceData.marketplace_fee = fee;
+    preferenceData.marketplace_fee = Math.round(fee * 100) / 100; // Round to 2 decimals
     preferenceData.notification_url = `${appUrl}/api/webhook-mercadopago?source_news=webhooks`; // Webhook para notificaciones
   }
+
+  console.log('Creating Preference with:', {
+    usingSellerToken: !!sellerAccessToken,
+    marketplace_fee: preferenceData.marketplace_fee,
+    appUrl,
+    items: preferenceData.items
+  });
 
   try {
     const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
