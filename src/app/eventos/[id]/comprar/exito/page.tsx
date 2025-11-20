@@ -217,8 +217,8 @@ export default function ExitoCompraPage() {
         <h1 className="text-2xl font-bold mb-4 text-red-400">
           No se encontró información de la compra.
         </h1>
-        <Link href="/dashboard/asistente/boletos" className="text-blue-400 hover:text-blue-300 transition-colors">
-          Ver mis boletos
+        <Link href="/dashboard/asistente/reservas" className="text-blue-400 hover:text-blue-300 transition-colors">
+          Ver mis reservas
         </Link>
       </div>
     );
@@ -351,12 +351,12 @@ export default function ExitoCompraPage() {
           <h3 className="text-2xl font-bold text-white mb-6">Próximos Pasos</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link
-              href="/dashboard/asistente/boletos"
+              href="/dashboard/asistente/reservas"
               className="group p-6 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl transition-all"
             >
               <Ticket className="text-blue-400 mb-3 group-hover:scale-110 transition-transform" size={32} />
-              <p className="text-white font-semibold mb-1">Ver Mis Boletos</p>
-              <p className="text-gray-400 text-sm">Accede a todos tus boletos</p>
+              <p className="text-white font-semibold mb-1">Ver Mis Reservas</p>
+              <p className="text-gray-400 text-sm">Accede a todas tus reservas</p>
             </Link>
             <button
               onClick={handleAgregarCalendario}

@@ -56,7 +56,6 @@ export default function Sidebar() {
                 return [
                     ...commonOptions,
                     { label: 'Mis Reservas', href: '/dashboard/asistente/reservas', icon: Ticket },
-                    { label: 'Mis Boletos', href: '/dashboard/asistente/boletos', icon: Ticket },
                 ];
             case 'organizador':
                 return [
