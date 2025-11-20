@@ -10,46 +10,44 @@ export async function GET(req: Request) {
         // Calcular la fecha límite (hace 5 minutos)
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-        // Buscar pagos pendientes antiguos
-        const pagosPendientes = await prisma.pago.findMany({
+        // Buscar reservas pendientes antiguas
+        const reservasPendientes = await prisma.reserva.findMany({
             where: {
-                estado_transaccion: 'pendiente',
+                estado_reserva: 'pendiente',
                 createdAt: {
                     lt: fiveMinutesAgo,
                 },
             },
-            include: {
-                reserva: true,
-            },
         });
 
-        console.log(`Encontrados ${pagosPendientes.length} pagos pendientes antiguos.`);
+        console.log(`🔍 Encontradas ${reservasPendientes.length} reservas pendientes antiguas.`);
 
         const resultados = [];
 
-        for (const pago of pagosPendientes) {
+        for (const reserva of reservasPendientes) {
             try {
-                // Actualizar pago a rechazado
-                await prisma.pago.update({
-                    where: { id: pago.id },
-                    data: { estado_transaccion: 'rejected' },
-                });
-
                 // Actualizar reserva a rechazada
                 await prisma.reserva.update({
-                    where: { id: pago.reserva_id },
+                    where: { id: reserva.id },
                     data: { estado_reserva: 'rechazada' },
                 });
 
+                // Actualizar todos los pagos asociados a rejected
+                await prisma.pago.updateMany({
+                    where: { reserva_id: reserva.id },
+                    data: { estado_transaccion: 'rejected' },
+                });
+
                 resultados.push({
-                    pagoId: pago.id,
-                    reservaId: pago.reserva_id,
+                    reservaId: reserva.id,
                     status: 'rechazado',
                 });
+
+                console.log(`✅ Reserva ${reserva.id} marcada como rechazada automáticamente.`);
             } catch (innerError) {
-                console.error(`Error actualizando pago ${pago.id}:`, innerError);
+                console.error(`❌ Error actualizando reserva ${reserva.id}:`, innerError);
                 resultados.push({
-                    pagoId: pago.id,
+                    reservaId: reserva.id,
                     error: 'Error actualizando',
                 });
             }
@@ -61,7 +59,7 @@ export async function GET(req: Request) {
             detalles: resultados,
         });
     } catch (error) {
-        console.error('Error en cron job de limpieza:', error);
+        console.error('❌ Error en cron job de limpieza:', error);
         return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
     }
 }

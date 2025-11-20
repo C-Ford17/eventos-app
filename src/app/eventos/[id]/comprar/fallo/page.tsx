@@ -16,7 +16,7 @@ export default function FalloCompraPage() {
       processedRef.current = true;
 
       // Llamar a la API para marcar como rechazado
-      fetch('/api/pagos/rechazar', {
+      fetch('/api/reservas/marcar-rechazada', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
