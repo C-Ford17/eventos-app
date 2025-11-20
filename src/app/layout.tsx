@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 export const metadata = {
   title: 'EventPlatform - Descubre y Vive Experiencias',
   description: 'La plataforma definitiva para encontrar y gestionar eventos.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

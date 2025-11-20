@@ -15,6 +15,7 @@ export default function BoletaQRPage() {
   const [qrDataURL, setQrDataURL] = useState<string>('');
 
   useEffect(() => {
+    if (!params?.id) return;
     fetch(`/api/reservas/${params.id}`)
       .then(res => res.json())
       .then(data => {
@@ -36,7 +37,7 @@ export default function BoletaQRPage() {
       })
       .catch(err => console.error('Error:', err))
       .finally(() => setLoading(false));
-  }, [params.id]);
+  }, [params?.id]);
 
   const handleDescargarImagen = () => {
     if (qrDataURL) {
