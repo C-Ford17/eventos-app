@@ -78,7 +78,7 @@ export default function Sidebar() {
 
     return (
         <aside
-            className={`fixed left-0 top-0 h-screen bg-[#0a0a0a]/95 border-r border-white/10 transition-all duration-300 z-50 ${isCollapsed ? 'w-20' : 'w-72'
+            className={`hidden md:block fixed left-0 top-0 h-screen bg-[#0a0a0a]/95 border-r border-white/10 transition-all duration-300 z-50 ${isCollapsed ? 'w-20' : 'w-72'
                 }`}
         >
             <div className="flex flex-col h-full">

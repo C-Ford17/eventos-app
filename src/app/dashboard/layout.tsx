@@ -3,7 +3,7 @@
 import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Search, User } from 'lucide-react';
+import { Search, User, Menu } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 
 export default function DashboardLayout({
@@ -12,6 +12,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<any>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -33,7 +34,7 @@ export default function DashboardLayout({
       <Sidebar />
 
       {/* Main content */}
-      <main className="flex-1 ml-20 md:ml-72 p-8 transition-all duration-300 relative z-10">
+      <main className="flex-1 md:ml-20 lg:ml-72 p-4 md:p-8 transition-all duration-300 relative z-10">
         {/* Topbar */}
         <header className="flex justify-between items-center mb-8">
           <div>
