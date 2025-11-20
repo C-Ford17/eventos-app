@@ -2,13 +2,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Ticket, Plus, Minus, ShoppingCart, AlertCircle, Loader2 } from 'lucide-react';
 
 interface TipoEntrada {
   id: string;
   nombre: string;
   precio: number;
   disponible: boolean;
-  cantidad?: number; // añadido para control local
+  cantidad?: number;
+  descripcion?: string;
 }
 
 export default function SeleccionEntradasPage() {
@@ -21,7 +23,6 @@ export default function SeleccionEntradasPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
 
-  // Verificar usuario
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -31,7 +32,6 @@ export default function SeleccionEntradasPage() {
     }
   }, [router]);
 
-  // Cargar evento y entradas
   useEffect(() => {
     if (!eventoId) return;
 
@@ -47,7 +47,6 @@ export default function SeleccionEntradasPage() {
         }
 
         if (entradasData.success) {
-          // Agregar campo 'cantidad' para control local
           setEntradas(
             entradasData.entradas.map((e: TipoEntrada) => ({ ...e, cantidad: 0 }))
           );
@@ -102,127 +101,94 @@ export default function SeleccionEntradasPage() {
 
   if (loading || !evento) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-20 h-20 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+          <p className="text-gray-400 animate-pulse">Cargando información...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Banner con imagen del evento */}
-        <div className="h-64 relative rounded mb-8 overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600">
-          {evento?.imagen_url ? (
-            <img
-              src={evento.imagen_url}
-              alt={evento.nombre}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-white/50">
-              <svg
-                className="w-20 h-20"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Hero Section with Gradient */}
+      <div className="relative h-80 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 overflow-hidden">
+        {/* Animated gradient orbs */}
+        <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-purple-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-[#0a0a0a]/40" />
+
+        {/* Content */}
+        <div className="relative h-full flex items-end">
+          <div className="max-w-7xl mx-auto px-4 pb-8 pt-20 w-full">
+            <button
+              onClick={() => router.back()}
+              className="text-gray-200 hover:text-white mb-4 flex items-center gap-2 transition-colors group"
+            >
+              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+              Volver al evento
+            </button>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md text-white text-sm font-semibold rounded-full mb-3">
+              <Ticket size={16} />
+              <span>{evento?.categoria?.nombre || 'Evento'}</span>
             </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <span className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-semibold">
-              {evento?.categoria?.nombre || 'Evento'}
-            </span>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              Selecciona tus Entradas
+            </h1>
+            <p className="text-gray-200 text-sm">
+              {evento.nombre} • {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')} • {evento.ubicacion}
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="text-gray-400 hover:text-white mb-4 flex items-center"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Volver
-          </button>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Selecciona tus Entradas
-          </h1>
-          <p className="text-gray-400">
-            {evento.nombre} |{' '}
-            {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')} -{' '}
-            {new Date(evento.fecha_inicio).toLocaleTimeString('es-ES', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}{' '}
-            | {evento.ubicacion}
-          </p>
-        </div>
-
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Lista de entradas */}
+          {/* Ticket Selection */}
           <div className="lg:col-span-2 space-y-4">
             {entradas.length > 0 ? (
               entradas.map((entrada) => (
-                <div key={entrada.id} className="bg-neutral-800 p-6 rounded-lg">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <div className="w-12 h-12 bg-blue-900 rounded flex items-center justify-center mr-4">
-                          <svg
-                            className="w-6 h-6 text-blue-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold text-white">
-                            {entrada.nombre}
-                          </h3>
-                          <p className="text-2xl font-bold text-white">
-                            ${Number(entrada.precio).toLocaleString('es-CO')}{' '}
-                            <span className="text-sm text-gray-400">COP</span>
-                          </p>
-                        </div>
+                <div
+                  key={entrada.id}
+                  className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl hover:border-blue-500/30 transition-all group"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
+                        <Ticket className="text-blue-400" size={24} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-white mb-1">
+                          {entrada.nombre}
+                        </h3>
+                        {entrada.descripcion && (
+                          <p className="text-gray-400 text-sm mb-2">{entrada.descripcion}</p>
+                        )}
+                        <p className="text-2xl font-bold text-green-400">
+                          ${Number(entrada.precio).toLocaleString('es-CO')}
+                          <span className="text-sm text-gray-500 ml-2">COP</span>
+                        </p>
+                        {!entrada.disponible && (
+                          <div className="flex items-center gap-2 mt-2 text-red-400 text-sm">
+                            <AlertCircle size={16} />
+                            <span>Agotado</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Selector de cantidad */}
-                    <div className="flex items-center space-x-3 ml-4">
+                    {/* Quantity Selector */}
+                    <div className="flex items-center gap-3">
                       <button
                         onClick={() => handleDecrement(entrada.id)}
                         disabled={(entrada.cantidad || 0) === 0}
-                        className="w-10 h-10 bg-neutral-700 hover:bg-neutral-600 text-white rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 text-white rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center"
                       >
-                        -
+                        <Minus size={18} />
                       </button>
                       <span className="text-2xl font-bold text-white w-12 text-center">
                         {entrada.cantidad || 0}
@@ -230,29 +196,47 @@ export default function SeleccionEntradasPage() {
                       <button
                         onClick={() => handleIncrement(entrada.id)}
                         disabled={!entrada.disponible}
-                        className="w-10 h-10 bg-neutral-700 hover:bg-neutral-600 text-white rounded-full disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        className="w-10 h-10 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 text-white rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center"
                       >
-                        +
+                        <Plus size={18} />
                       </button>
                     </div>
                   </div>
+
+                  {(entrada.cantidad || 0) > 0 && (
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Subtotal ({entrada.cantidad}x)</span>
+                        <span className="text-white font-semibold">
+                          ${(Number(entrada.precio) * (entrada.cantidad || 0)).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-20 bg-[#1a1a1a]/40 border border-white/5 rounded-2xl">
+                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Ticket className="w-10 h-10 text-gray-600" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">No hay entradas disponibles</h3>
                 <p className="text-gray-400">
-                  No hay tipos de entrada disponibles para este evento
+                  Este evento no tiene tipos de entrada configurados
                 </p>
               </div>
             )}
           </div>
 
-          {/* Resumen de compra */}
+          {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-neutral-800 p-6 rounded-lg sticky top-4">
-              <h2 className="text-xl font-semibold text-white mb-4">
-                Resumen de tu compra
-              </h2>
+            <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl sticky top-4">
+              <div className="flex items-center gap-2 mb-6">
+                <ShoppingCart className="text-blue-400" size={20} />
+                <h2 className="text-xl font-bold text-white">
+                  Resumen de tu compra
+                </h2>
+              </div>
 
               {totalEntradas > 0 ? (
                 <>
@@ -261,50 +245,56 @@ export default function SeleccionEntradasPage() {
                     .map((entrada) => (
                       <div
                         key={entrada.id}
-                        className="flex justify-between text-gray-300 mb-2"
+                        className="flex justify-between text-gray-300 mb-3 pb-3 border-b border-white/5"
                       >
-                        <span>
+                        <span className="text-sm">
                           {entrada.cantidad}x {entrada.nombre}
                         </span>
-                        <span>
-                          $
-                          {(
-                            Number(entrada.precio) * (entrada.cantidad || 0)
-                          ).toLocaleString('es-CO')}
+                        <span className="font-semibold">
+                          ${(Number(entrada.precio) * (entrada.cantidad || 0)).toLocaleString('es-CO')}
                         </span>
                       </div>
                     ))}
 
-                  <div className="border-t border-neutral-700 my-4"></div>
-
-                  <div className="flex justify-between text-gray-300 mb-2">
-                    <span>Subtotal</span>
-                    <span>${subtotal.toLocaleString('es-CO')}</span>
+                  <div className="border-t border-white/10 my-4 pt-4 space-y-3">
+                    <div className="flex justify-between text-gray-400 text-sm">
+                      <span>Subtotal</span>
+                      <span>${subtotal.toLocaleString('es-CO')}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-400 text-sm">
+                      <span>Cargos por servicio (10%)</span>
+                      <span>${cargoServicio.toLocaleString('es-CO')}</span>
+                    </div>
                   </div>
 
-                  <div className="flex justify-between text-gray-300 mb-2">
-                    <span>Cargos por servicio</span>
-                    <span>${cargoServicio.toLocaleString('es-CO')}</span>
-                  </div>
-
-                  <div className="border-t border-neutral-700 my-4"></div>
-
-                  <div className="flex justify-between text-white text-xl font-bold mb-6">
-                    <span>Total (COP)</span>
-                    <span>${total.toLocaleString('es-CO')}</span>
+                  <div className="border-t border-white/10 my-4 pt-4">
+                    <div className="flex justify-between text-white text-xl font-bold mb-6">
+                      <span>Total</span>
+                      <span>${total.toLocaleString('es-CO')}</span>
+                    </div>
                   </div>
 
                   <button
                     onClick={handleContinuar}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                   >
+                    <ShoppingCart size={20} />
                     Continuar con la Reserva
                   </button>
+
+                  <p className="text-gray-500 text-xs text-center mt-4">
+                    Al continuar, aceptas nuestros términos y condiciones
+                  </p>
                 </>
               ) : (
-                <p className="text-gray-400 text-center py-8">
-                  Selecciona al menos una entrada para continuar
-                </p>
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShoppingCart className="text-gray-600" size={24} />
+                  </div>
+                  <p className="text-gray-400 text-sm">
+                    Selecciona al menos una entrada para continuar
+                  </p>
+                </div>
               )}
             </div>
           </div>

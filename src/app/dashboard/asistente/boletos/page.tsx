@@ -2,6 +2,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Ticket, Calendar, MapPin, QrCode, ArrowRight, Filter } from 'lucide-react';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function MisBoletosPage() {
   const [reservas, setReservas] = useState<any[]>([]);
@@ -10,7 +12,7 @@ export default function MisBoletosPage() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
+
     if (!user.id) {
       return;
     }
@@ -34,88 +36,121 @@ export default function MisBoletosPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-400 animate-pulse">Cargando tus boletos...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">Mis Boletos</h1>
-        <select
-          value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
-          className="px-4 py-2 bg-neutral-800 text-white rounded border border-neutral-700"
-        >
-          <option value="confirmada">Confirmadas</option>
-          <option value="cancelada">Canceladas</option>
-          <option value="todas">Todas</option>
-        </select>
+    <div className="space-y-8 pb-10">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            <QrCode className="text-blue-500" size={32} />
+            Mis Boletos
+          </h1>
+          <p className="text-gray-400 mt-1">Accede a tus entradas y códigos QR</p>
+        </div>
+
+        <div className="relative min-w-[200px]">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+          <CustomDropdown
+            options={[
+              { value: 'confirmada', label: 'Confirmadas' },
+              { value: 'cancelada', label: 'Canceladas' },
+              { value: 'todas', label: 'Todas' }
+            ]}
+            value={filtroEstado}
+            onChange={(value) => setFiltroEstado(value)}
+            buttonClassName="pl-12"
+          />
+        </div>
       </div>
 
       {reservas.length === 0 ? (
-        <div className="text-center py-12">
-          <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-          </svg>
-          <p className="text-gray-400 text-lg mb-4">No tienes boletos aún</p>
+        <div className="text-center py-20 bg-[#1a1a1a]/40 border border-white/5 rounded-3xl">
+          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Ticket className="w-10 h-10 text-gray-600" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">No tienes boletos {filtroEstado !== 'todas' ? 'en esta categoría' : ''}</h3>
+          <p className="text-gray-400 mb-8">Explora los eventos disponibles y consigue tus entradas.</p>
           <Link
             href="/explorar"
-            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40"
           >
             Explorar Eventos
+            <ArrowRight size={18} />
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {reservas.map((reserva) => (
-            <div key={reserva.id} className="bg-neutral-800 p-6 rounded-lg">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-1">
-                    {reserva.evento.nombre}
-                  </h3>
-                  <p className="text-gray-400 text-sm">
+            <div key={reserva.id} className="group relative bg-[#1a1a1a]/60 border border-white/10 rounded-2xl overflow-hidden hover:border-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/5 flex flex-col">
+              {/* Ticket Header Design */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+
+              <div className="p-6 flex-1">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-blue-400 border border-white/5">
+                    <Ticket size={24} />
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${reserva.estado_reserva === 'confirmada'
+                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                    }`}>
+                    {reserva.estado_reserva.charAt(0).toUpperCase() + reserva.estado_reserva.slice(1)}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
+                  {reserva.evento.nombre}
+                </h3>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-gray-400 text-sm">
+                    <Calendar size={16} className="text-gray-500" />
                     {new Date(reserva.evento.fecha_inicio).toLocaleDateString('es-ES', {
+                      weekday: 'long',
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                     })}
-                  </p>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-400 text-sm">
+                    <MapPin size={16} className="text-gray-500" />
+                    <span className="line-clamp-1">{reserva.evento.ubicacion}</span>
+                  </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  reserva.estado_reserva === 'confirmada' 
-                    ? 'bg-green-600 text-white' 
-                    : 'bg-red-600 text-white'
-                }`}>
-                  {reserva.estado_reserva}
-                </span>
-              </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Boletos</span>
-                  <span className="text-white">{reserva.cantidad_boletos}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Total pagado</span>
-                  <span className="text-white">${parseFloat(reserva.precio_total).toLocaleString('es-CO')}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Método de pago</span>
-                  <span className="text-white">{reserva.metodo_pago}</span>
+                <div className="bg-white/5 rounded-xl p-4 border border-white/5 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Boletos</span>
+                    <span className="text-white font-medium">{reserva.cantidad_boletos} entradas</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total</span>
+                    <span className="text-green-400 font-bold">${parseFloat(reserva.precio_total).toLocaleString('es-CO')}</span>
+                  </div>
                 </div>
               </div>
 
+              {/* Ticket Footer / Action */}
               {reserva.estado_reserva === 'confirmada' && (
-                <Link
-                  href={`/boletos/${reserva.id}`}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold transition block text-center"
-                >
-                  Ver Boleto QR
-                </Link>
+                <div className="p-4 border-t border-white/5 bg-white/5">
+                  <Link
+                    href={`/boletos/${reserva.id}`}
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 flex items-center justify-center gap-2 group/btn"
+                  >
+                    <QrCode size={20} />
+                    Ver Código QR
+                    <ArrowRight size={18} className="opacity-0 -translate-x-2 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 transition-all" />
+                  </Link>
+                </div>
               )}
             </div>
           ))}

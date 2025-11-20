@@ -1,14 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-
+import { Shield, CreditCard, Loader2, Calendar, MapPin, Ticket, ArrowLeft } from 'lucide-react';
 export default function PagoPage() {
   const params = useParams();
   const router = useRouter();
   const eventoId = params.id;
   const [compra, setCompra] = useState<any>(null);
   const [procesando, setProcesando] = useState(false);
-
   useEffect(() => {
     const compraStr = localStorage.getItem('compraActual');
     if (!compraStr) {
@@ -17,170 +16,196 @@ export default function PagoPage() {
     }
     setCompra(JSON.parse(compraStr));
   }, [eventoId, router]);
-
   const handlePagar = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setProcesando(true);
-
-  try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!user.id) {
-      alert('Debes iniciar sesión para continuar');
-      router.push('/login');
-      return;
+    e.preventDefault();
+    setProcesando(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) {
+        alert('Debes iniciar sesión para continuar');
+        router.push('/login');
+        return;
+      }
+      const reservarRes = await fetch('/api/reservas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evento_id: eventoId,
+          usuario_id: user.id,
+          cantidad_boletos: compra.entradas.reduce((sum: number, e: any) => sum + e.cantidad, 0),
+          metodo_pago: 'pendiente',
+          subtotal: compra.subtotal,
+          cargo_servicio: compra.cargoServicio,
+          total: compra.total,
+          tipo_entrada_id: compra.entradas[0]?.id,
+        }),
+      });
+      const reservarData = await reservarRes.json();
+      if (!reservarRes.ok || !reservarData.success) {
+        throw new Error(reservarData.error || 'Error al crear reserva');
+      }
+      const reservaId = reservarData.reserva.id;
+      const response = await fetch('/api/pago-mercadopago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventoId,
+          descripcion: `Compra entradas - ${compra.evento.nombre}`,
+          monto: compra.total,
+          referencia: reservaId,
+          email: user.email,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.init_point) {
+        throw new Error(data.error || 'Error creando preferencia');
+      }
+      window.location.href = data.init_point;
+    } catch (error: any) {
+      alert(error.message || 'Error procesando pago');
+      setProcesando(false);
     }
-
-    // En el handlePagar, cambia esta parte:
-    const reservarRes = await fetch('/api/reservas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        evento_id: eventoId,
-        usuario_id: user.id,
-        cantidad_boletos: compra.entradas.reduce((sum: number, e: any) => sum + e.cantidad, 0),
-        metodo_pago: 'pendiente',
-        subtotal: compra.subtotal,
-        cargo_servicio: compra.cargoServicio,
-        total: compra.total,
-        tipo_entrada_id: compra.entradas[0]?.id, // <-- AGREGA ESTA LÍNEA
-      }),
-    });
-
-
-    const reservarData = await reservarRes.json();
-    if (!reservarRes.ok || !reservarData.success) {
-      throw new Error(reservarData.error || 'Error al crear reserva');
-    }
-
-    const reservaId = reservarData.reserva.id;
-
-    // 2. Crear preferencia MercadoPago y redirigir
-    const response = await fetch('/api/pago-mercadopago', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventoId,
-        descripcion: `Compra entradas - ${compra.evento.nombre}`,
-        monto: compra.total,
-        referencia: reservaId,
-        email: user.email,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok || !data.init_point) {
-      throw new Error(data.error || 'Error creando preferencia');
-    }
-
-    window.location.href = data.init_point;
-  } catch (error: any) {
-    alert(error.message || 'Error procesando pago');
-    setProcesando(false);
-  }
-};
-
-
+  };
   if (!compra) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <p className="text-gray-400">Cargando...</p>
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+          <p className="text-gray-400 animate-pulse">Cargando...</p>
+        </div>
       </div>
     );
   }
-
   return (
-    <div className="min-h-screen bg-gray-950 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header seguro */}
-        <div className="flex items-center justify-center mb-8">
-          <svg className="w-6 h-6 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-          </svg>
-          <h1 className="text-3xl font-bold text-white">Finaliza tu Compra</h1>
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Header */}
+      <div className="bg-[#1a1a1a]/60 border-b border-white/10 pt-20">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <button
+            onClick={() => router.back()}
+            className="text-gray-400 hover:text-white mb-4 flex items-center gap-2 transition-colors group relative z-10"
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            Volver
+          </button>
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="text-green-500" size={32} />
+            <h1 className="text-3xl font-bold text-white">Pago Seguro</h1>
+          </div>
+          <p className="text-gray-400">Serás redirigido a MercadoPago para completar tu compra</p>
         </div>
-        <p className="text-center text-gray-400 mb-8">
-          Serás redirigido a MercadoPago para completar el pago de forma segura.
-        </p>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Acción de pago */}
+          {/* Payment Action */}
           <div className="lg:col-span-2">
-            <form onSubmit={handlePagar} className="bg-neutral-800 p-6 rounded-lg">
-              <h2 className="text-xl font-semibold text-white mb-6">Pago en MercadoPago</h2>
-              <div className="mb-6">
-                <p className="text-gray-300">
-                  Al hacer clic en "Pagar", serás transferido a la pasarela de MercadoPago. Podrás usar tarjeta, débito o PSE.
+            <form onSubmit={handlePagar} className="bg-[#1a1a1a]/60 border border-white/10 p-8 rounded-2xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-blue-500/10 rounded-xl">
+                  <CreditCard className="text-blue-400" size={24} />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Método de Pago</h2>
+              </div>
+              <div className="bg-black/20 border border-white/5 p-6 rounded-xl mb-6">
+                <p className="text-gray-300 mb-4">
+                  Al hacer clic en "Proceder al Pago", serás redirigido a MercadoPago donde podrás completar tu compra de forma segura usando:
                 </p>
+                <ul className="space-y-2 text-gray-400 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                    Tarjetas de crédito y débito
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                    PSE (Pagos Seguros en Línea)
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                    Efectivo en puntos autorizados
+                  </li>
+                </ul>
               </div>
               <button
                 type="submit"
                 disabled={procesando}
-                className="w-full mt-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
               >
-                {procesando ? 'Redirigiendo...' : `Pagar $${compra.total.toLocaleString('es-CO')} COP`}
+                {procesando ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    Redirigiendo...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard size={20} />
+                    Proceder al Pago - ${compra.total.toLocaleString('es-CO')}
+                  </>
+                )}
               </button>
-              <div className="mt-4 text-center text-gray-400 text-sm flex items-center justify-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Pago seguro y protegido con MercadoPago
+              <div className="mt-6 flex items-center justify-center text-gray-400 text-sm">
+                <Shield size={16} className="mr-2 text-green-500" />
+                Pago 100% seguro y protegido con MercadoPago
               </div>
             </form>
           </div>
-          {/* Resumen del pedido */}
+          {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-neutral-800 p-6 rounded-lg sticky top-4">
-              <h3 className="text-lg font-semibold text-white mb-4">Resumen del Pedido</h3>
-              <div className="mb-4">
-                <h4 className="text-white font-medium mb-2">{compra.evento.nombre}</h4>
-                {/* Fecha del evento */}
+            <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl sticky top-4">
+              <h3 className="text-xl font-bold text-white mb-6">Resumen de Compra</h3>
+              <div className="mb-6">
+                <h4 className="text-white font-semibold mb-3">{compra.evento.nombre}</h4>
                 {compra.evento.fecha_inicio && (
-                  <div className="flex items-center text-gray-400 text-sm mb-1">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    {new Date(compra.evento.fecha_inicio).toLocaleDateString('es-ES', { 
-                      weekday: 'short',
-                      year: 'numeric', 
-                      month: 'short', 
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                  <div className="flex items-center gap-2 text-gray-400 text-sm mb-2">
+                    <Calendar size={16} className="text-blue-400" />
+                    <span>
+                      {new Date(compra.evento.fecha_inicio).toLocaleDateString('es-ES', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })} - {new Date(compra.evento.fecha_inicio).toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
                   </div>
                 )}
-                {/* Ubicación del evento */}
                 {compra.evento.ubicacion && (
-                  <div className="flex items-center text-gray-400 text-sm">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {compra.evento.ubicacion}
+                  <div className="flex items-center gap-2 text-gray-400 text-sm">
+                    <MapPin size={16} className="text-purple-400" />
+                    <span>{compra.evento.ubicacion}</span>
                   </div>
                 )}
               </div>
-              <div className="space-y-2 mb-4 border-t border-neutral-700 pt-4">
-                <div className="flex justify-between text-gray-300 text-sm">
-                  <span>Cantidad de Entradas</span>
-                  <span>{compra.entradas.reduce((sum: number, e: any) => sum + e.cantidad, 0)}</span>
-                </div>
-                <div className="flex justify-between text-gray-300 text-sm">
+              <div className="space-y-3 mb-6 pb-6 border-b border-white/10">
+                {compra.entradas.map((entrada: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Ticket size={14} className="text-gray-500" />
+                      <span className="text-gray-300">{entrada.cantidad}x {entrada.nombre}</span>
+                    </div>
+                    <span className="text-white">${(entrada.precio * entrada.cantidad).toLocaleString('es-CO')}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2 mb-6">
+                <div className="flex justify-between text-gray-400 text-sm">
                   <span>Subtotal</span>
-                  <span>${compra.subtotal.toLocaleString('es-CO')} COP</span>
+                  <span>${compra.subtotal.toLocaleString('es-CO')}</span>
                 </div>
-                <div className="flex justify-between text-gray-300 text-sm">
-                  <span>Cargo por servicio</span>
-                  <span>${compra.cargoServicio.toLocaleString('es-CO')} COP</span>
+                <div className="flex justify-between text-gray-400 text-sm">
+                  <span>Cargo de servicio</span>
+                  <span>${compra.cargoServicio.toLocaleString('es-CO')}</span>
                 </div>
               </div>
-              <div className="border-t border-neutral-700 pt-4">
-                <div className="flex justify-between text-white font-bold text-lg mb-4">
-                  <span>Total a Pagar</span>
-                  <span>${compra.total.toLocaleString('es-CO')} COP</span>
+              <div className="border-t border-white/10 pt-4">
+                <div className="flex justify-between text-white font-bold text-xl">
+                  <span>Total</span>
+                  <span>${compra.total.toLocaleString('es-CO')}</span>
                 </div>
               </div>
             </div>
-          </div> 
+          </div>
         </div>
       </div>
     </div>

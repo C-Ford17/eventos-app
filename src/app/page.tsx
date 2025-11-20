@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Search, Calendar, MapPin, Ticket, Star, Shield, Zap } from 'lucide-react';
 
 interface Evento {
   id: string;
@@ -29,10 +30,9 @@ export default function Home() {
 
   const cargarEventosDestacados = async () => {
     try {
-      // Cargar eventos programados, ordenados por fecha
       const response = await fetch('/api/eventos?estado=programado&limit=4');
       const data = await response.json();
-      
+
       if (data.success) {
         setEventosDestacados(data.eventos);
       }
@@ -45,9 +45,7 @@ export default function Home() {
 
   const handleBuscar = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (busqueda.trim()) {
-      // Redirigir a explorar con el término de búsqueda
       router.push(`/explorar?q=${encodeURIComponent(busqueda.trim())}`);
     } else {
       router.push('/explorar');
@@ -63,170 +61,226 @@ export default function Home() {
   };
 
   const formatearPrecio = (precio: number | null | undefined) => {
-  if (precio === null || precio === undefined || precio === 0) {
-    return 'Gratis';
-  }
-  return `$${precio.toLocaleString('es-CO')}`;
-};
+    if (precio === null || precio === undefined || precio === 0) {
+      return 'Gratis';
+    }
+    return `$${precio.toLocaleString('es-CO')}`;
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
-      {/* Hero principal */}
-      <section 
-        className="flex flex-col items-center justify-center py-20 bg-cover bg-center relative"
-        style={{ backgroundImage: "url('/fondo-hero.jpg')" }}
-      >
-        {/* Overlay oscuro para mejor legibilidad */}
-        <div className="absolute inset-0 bg-black/50"></div>
-        
-        <div className="relative z-10 max-w-4xl mx-auto px-4">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-center mb-4 leading-tight">
-            Descubre y Vive Experiencias<br />Inolvidables
+    <div className="min-h-screen flex flex-col">
+      {/* Hero Section */}
+      <section className="relative min-h-[80vh] flex flex-col items-center justify-center py-20 overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-[url('/fondo-hero.jpg')] bg-cover bg-center opacity-20" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-[#0a0a0a]" />
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-blue-400 mb-8 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Star size={14} className="fill-blue-400" />
+            <span>La plataforma #1 de eventos</span>
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+            Descubre y Vive
+            <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+              Experiencias Inolvidables
+            </span>
           </h1>
-          <p className="text-center text-lg text-neutral-300 mb-8 max-w-xl mx-auto">
-            La plataforma definitiva para encontrar, gestionar y disfrutar de los mejores eventos a tu alrededor.
+
+          <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+            Conecta con los mejores eventos, conciertos y conferencias.
+            Gestiona tus entradas de forma segura y disfruta el momento.
           </p>
-          
-          {/* Buscador funcional */}
-          <form 
+
+          {/* Search Bar */}
+          <form
             onSubmit={handleBuscar}
-            className="w-full max-w-lg mx-auto flex items-center gap-2"
+            className="w-full max-w-2xl mx-auto relative group animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300"
           >
-            <input 
-              type="text"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="flex-1 px-5 py-3 rounded bg-neutral-900/90 backdrop-blur text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-              placeholder="Buscar por evento, lugar o categoría..." 
-            />
-            <button 
-              type="submit"
-              className="px-5 py-3 bg-blue-600 rounded text-white font-semibold hover:bg-blue-700 transition"
-            >
-              Buscar
-            </button>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-25 group-hover:opacity-40 transition-opacity" />
+            <div className="relative flex items-center bg-[#1a1a1a] border border-white/10 rounded-full p-2 shadow-2xl">
+              <Search className="ml-4 text-gray-400" size={20} />
+              <input
+                type="text"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="flex-1 px-4 py-3 bg-transparent text-white placeholder-gray-500 focus:outline-none text-lg"
+                placeholder="Busca eventos, artistas o lugares..."
+              />
+              <button
+                type="submit"
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-full transition-all hover:shadow-lg hover:shadow-blue-600/25 active:scale-95"
+              >
+                Buscar
+              </button>
+            </div>
           </form>
         </div>
       </section>
 
-      {/* Sección destacada de eventos */}
-      <section className="px-6 md:px-20 py-10">
-        <div className="flex justify-between items-center mb-7">
-          <h2 className="text-2xl font-bold">No te pierdas esto</h2>
-          <Link 
+      {/* Featured Events */}
+      <section className="px-6 md:px-20 py-20 relative z-10">
+        <div className="flex justify-between items-end mb-12">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">Eventos Destacados</h2>
+            <p className="text-gray-400">No te pierdas las mejores experiencias de la temporada</p>
+          </div>
+          <Link
             href="/explorar"
-            className="text-blue-400 hover:text-blue-300 text-sm transition"
+            className="group flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
           >
-            Ver todos los eventos →
+            Ver todos
+            <span className="group-hover:translate-x-1 transition-transform">→</span>
           </Link>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-neutral-900 rounded-lg p-3 animate-pulse">
-                <div className="w-full h-48 bg-neutral-800 rounded mb-2"></div>
-                <div className="h-4 bg-neutral-800 rounded mb-2"></div>
-                <div className="h-3 bg-neutral-800 rounded w-2/3"></div>
-              </div>
+              <div key={i} className="bg-white/5 rounded-2xl p-4 animate-pulse h-[400px]" />
             ))}
           </div>
         ) : eventosDestacados.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {eventosDestacados.map((evento) => (
               <Link
                 key={evento.id}
                 href={`/eventos/${evento.id}`}
-                className="bg-neutral-900 rounded-lg p-3 hover:bg-neutral-800 transition group"
+                className="group relative bg-[#121212] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10"
               >
-                {/* Imagen del evento */}
-                <div className="relative w-full h-48 mb-2 overflow-hidden rounded bg-neutral-800">
+                {/* Image Container */}
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#121212] to-transparent opacity-60 z-10" />
                   {evento.imagen_url ? (
-                    <img 
-                      src={evento.imagen_url} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                    <img
+                      src={evento.imagen_url}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       alt={evento.nombre}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-600">
-                      <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                    <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                      <Ticket className="w-12 h-12 text-neutral-600" />
                     </div>
                   )}
-                  
-                  {/* Badge de categoría */}
-                  <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+
+                  <div className="absolute top-3 right-3 z-20 bg-black/50 backdrop-blur-md border border-white/10 text-white text-xs font-medium px-3 py-1.5 rounded-full">
                     {evento.categoria.nombre}
                   </div>
                 </div>
 
-                {/* Info del evento */}
-                <div className="font-semibold line-clamp-1 group-hover:text-blue-400 transition">
-                  {evento.nombre}
-                </div>
-                <div className="text-neutral-400 text-sm mt-1">
-                  📅 {formatearFecha(evento.fecha_inicio)}
-                </div>
-                <div className="text-neutral-400 text-sm">
-                  📍 {evento.ubicacion}
-                </div>
-                <div className="text-blue-400 text-sm font-semibold mt-2">
-                  {formatearPrecio(evento.precio_base)}
+                {/* Content */}
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <h3 className="font-bold text-lg leading-tight group-hover:text-blue-400 transition-colors line-clamp-2">
+                      {evento.nombre}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <Calendar size={14} className="text-blue-500" />
+                      {formatearFecha(evento.fecha_inicio)}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <MapPin size={14} className="text-blue-500" />
+                      <span className="truncate">{evento.ubicacion}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                    <div className="text-sm text-gray-500">Desde</div>
+                    <div className="text-lg font-bold text-white">
+                      {formatearPrecio(evento.precio_base)}
+                    </div>
+                  </div>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-neutral-400 mb-4">No hay eventos disponibles en este momento</p>
-            <Link 
+          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5">
+            <Ticket className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">No hay eventos destacados</h3>
+            <p className="text-gray-400 mb-6">Sé el primero en crear un evento increíble</p>
+            <Link
               href="/explorar"
-              className="text-blue-400 hover:text-blue-300"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-colors"
             >
-              Explorar todos los eventos
+              Explorar Eventos
             </Link>
           </div>
         )}
       </section>
 
-      {/* Beneficios / Por qué elegirnos */}
-      <section className="py-12 px-6 md:px-20 bg-neutral-950 border-t border-neutral-800">
-        <h2 className="text-2xl font-bold mb-4">¿Por qué elegirnos?</h2>
-        <p className="max-w-xl mb-8 text-neutral-400">
-          Te ofrecemos la mejor experiencia para descubrir y organizar eventos, todo en un solo lugar.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-neutral-900 rounded p-6 flex flex-col items-center">
-            <span className="text-blue-400 text-3xl mb-2">🎫</span>
-            <p className="font-semibold mb-1">Descubre eventos únicos</p>
-            <p className="text-neutral-400 text-sm text-center">
-              Explora un catálogo curado de eventos y encuentra tu próxima gran experiencia.
+      {/* Features Section */}
+      <section className="py-24 px-6 md:px-20 border-t border-white/5 bg-black/20">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Por qué elegirnos?</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Creamos la mejor experiencia para que solo te preocupes por disfrutar
             </p>
           </div>
-          <div className="bg-neutral-900 rounded p-6 flex flex-col items-center">
-            <span className="text-blue-400 text-3xl mb-2">📱</span>
-            <p className="font-semibold mb-1">Gestiona tus entradas</p>
-            <p className="text-neutral-400 text-sm text-center">
-              Compra, almacena y accede a tus entradas de forma segura desde cualquier dispositivo.
-            </p>
-          </div>
-          <div className="bg-neutral-900 rounded p-6 flex flex-col items-center">
-            <span className="text-blue-400 text-3xl mb-2">🗓️</span>
-            <p className="font-semibold mb-1">Organiza con facilidad</p>
-            <p className="text-neutral-400 text-sm text-center">
-              Nuestras herramientas intuitivas hacen que la creación y gestión de tu evento sea un proceso simple.
-            </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Star,
+                title: "Eventos Exclusivos",
+                desc: "Acceso a las mejores experiencias seleccionadas especialmente para ti.",
+                color: "text-yellow-400"
+              },
+              {
+                icon: Shield,
+                title: "Compra Segura",
+                desc: "Tecnología de punta para garantizar que tus entradas sean 100% válidas.",
+                color: "text-green-400"
+              },
+              {
+                icon: Zap,
+                title: "Gestión Simple",
+                desc: "Organiza, vende y gestiona tus propios eventos en cuestión de minutos.",
+                color: "text-blue-400"
+              }
+            ].map((feature, i) => (
+              <div key={i} className="bg-[#121212] border border-white/5 p-8 rounded-2xl hover:bg-white/5 transition-colors group">
+                <div className={`w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${feature.color}`}>
+                  <feature.icon size={28} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  {feature.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-6 px-6 md:px-20 mt-auto border-t border-neutral-800 text-neutral-400 text-xs flex flex-col md:flex-row justify-between gap-4">
-        <div>© 2025 EventPlatform. Todos los derechos reservados.</div>
-        <div className="flex gap-4">
-          <a href="#" className="hover:text-white transition">Términos de Servicio</a>
-          <a href="#" className="hover:text-white transition">Política de Privacidad</a>
+      <footer className="py-12 px-6 md:px-20 border-t border-white/5 bg-[#050505] mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+              E
+            </div>
+            <span className="text-xl font-bold text-white">EventPlatform</span>
+          </div>
+
+          <div className="flex gap-8 text-sm text-gray-400">
+            <a href="#" className="hover:text-white transition-colors">Términos</a>
+            <a href="#" className="hover:text-white transition-colors">Privacidad</a>
+            <a href="#" className="hover:text-white transition-colors">Soporte</a>
+          </div>
+
+          <div className="text-sm text-gray-500">
+            © 2025 EventPlatform. Hecho con 💙
+          </div>
         </div>
       </footer>
     </div>

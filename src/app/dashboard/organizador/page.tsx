@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+import { Calendar, Users, DollarSign, Plus, TrendingUp, ArrowRight, Clock } from 'lucide-react';
+
 export default function OrganizadorPanel() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -18,7 +20,7 @@ export default function OrganizadorPanel() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
+
     if (!user.id) return;
 
     // Cargar eventos del organizador
@@ -29,11 +31,11 @@ export default function OrganizadorPanel() {
           const misEventos = data.eventos.filter(
             (e: any) => e.organizador_id === user.id
           );
-          
+
           // Calcular estadísticas
           const activos = misEventos.filter((e: any) => e.estado === 'programado').length;
           const totalReservas = misEventos.reduce(
-            (sum: number, e: any) => sum + (e.boletos_vendidos ?? 0), 
+            (sum: number, e: any) => sum + (e.boletos_vendidos ?? 0),
             0
           );
 
@@ -54,11 +56,11 @@ export default function OrganizadorPanel() {
           // Próximos eventos
           const proximos = misEventos
             .filter((e: any) => new Date(e.fecha_inicio) > new Date())
-            .sort((a: any, b: any) => 
+            .sort((a: any, b: any) =>
               new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime()
             )
             .slice(0, 5);
-          
+
           setProximosEventos(proximos);
         }
       })
@@ -68,7 +70,7 @@ export default function OrganizadorPanel() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -87,100 +89,116 @@ export default function OrganizadorPanel() {
 
       {/* Cards de estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-neutral-800 p-6 rounded-lg">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#121212] border border-white/10 p-6 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl -mr-12 -mt-12 transition-all group-hover:bg-purple-500/20"></div>
+          <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className="text-gray-400 text-sm">Eventos Activos</p>
+              <p className="text-gray-400 text-sm font-medium">Eventos Activos</p>
               <p className="text-3xl font-bold text-white mt-2">
                 {stats.eventosActivos}
               </p>
             </div>
-            <div className="bg-purple-600 p-3 rounded-full">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+            <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400">
+              <Calendar size={24} />
             </div>
           </div>
         </div>
 
-        <div className="bg-neutral-800 p-6 rounded-lg">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#121212] border border-white/10 p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-xl -mr-12 -mt-12 transition-all group-hover:bg-blue-500/20"></div>
+          <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className="text-gray-400 text-sm">Reservas Totales</p>
+              <p className="text-gray-400 text-sm font-medium">Reservas Totales</p>
               <p className="text-3xl font-bold text-white mt-2">
                 {stats.reservasTotales}
               </p>
             </div>
-            <div className="bg-blue-600 p-3 rounded-full">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
+              <Users size={24} />
             </div>
           </div>
         </div>
 
-        <div className="bg-neutral-800 p-6 rounded-lg">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#121212] border border-white/10 p-6 rounded-2xl relative overflow-hidden group hover:border-green-500/30 transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-xl -mr-12 -mt-12 transition-all group-hover:bg-green-500/20"></div>
+          <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className="text-gray-400 text-sm">Ingresos del Mes</p>
+              <p className="text-gray-400 text-sm font-medium">Ingresos del Mes</p>
               <p className="text-3xl font-bold text-white mt-2">
                 ${(stats.ingresosMes / 1000000).toFixed(1)}M
               </p>
             </div>
-            <div className="bg-green-600 p-3 rounded-full">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-green-400">
+              <DollarSign size={24} />
             </div>
           </div>
         </div>
 
         <Link
           href="/dashboard/organizador/crear"
-          className="bg-blue-600 hover:bg-blue-700 p-6 rounded-lg transition flex items-center justify-center"
+          className="bg-blue-600 hover:bg-blue-500 p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-600/20 flex flex-col items-center justify-center gap-3 group"
         >
-          <div className="text-center">
-            <svg className="w-8 h-8 text-white mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <p className="text-white font-semibold">Crear Evento</p>
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white group-hover:rotate-90 transition-transform duration-300">
+            <Plus size={24} />
           </div>
+          <p className="text-white font-bold">Crear Evento</p>
         </Link>
       </div>
 
       {/* Mis eventos recientes */}
-      <section className="bg-neutral-800 p-6 rounded-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-white">Próximos Eventos</h2>
-          <Link href="/dashboard/organizador/eventos" className="text-blue-400 hover:text-blue-300 text-sm">
-            Ver todos →
+      <section className="bg-[#121212] border border-white/10 p-6 rounded-2xl shadow-xl">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <TrendingUp className="text-blue-500" size={20} />
+            Próximos Eventos
+          </h2>
+          <Link href="/dashboard/organizador/eventos" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+            Ver todos <ArrowRight size={14} />
           </Link>
         </div>
-        
+
         {proximosEventos.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            <p>No tienes eventos próximos</p>
-            <Link 
+          <div className="text-center py-12 border border-dashed border-white/10 rounded-xl bg-white/5">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Calendar className="text-gray-500" size={24} />
+            </div>
+            <p className="text-gray-400 mb-4">No tienes eventos próximos</p>
+            <Link
               href="/dashboard/organizador/crear"
-              className="text-blue-400 hover:text-blue-300 mt-2 inline-block"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
             >
+              <Plus size={16} />
               Crear tu primer evento
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {proximosEventos.map((evento) => (
-              <div key={evento.id} className="bg-neutral-900 p-4 rounded flex justify-between items-center">
-                <div>
-                  <p className="text-white font-medium">{evento.nombre}</p>
-                  <p className="text-gray-400 text-sm">
-                    {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')} • {evento.boletos_vendidos ?? 0} reservas
-                  </p>
+              <div key={evento.id} className="group bg-white/5 border border-white/5 p-4 rounded-xl hover:bg-white/10 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex flex-col items-center justify-center text-blue-400 shrink-0">
+                    <span className="text-xs font-bold uppercase">{new Date(evento.fecha_inicio).toLocaleDateString('es-ES', { month: 'short' })}</span>
+                    <span className="text-lg font-bold leading-none">{new Date(evento.fecha_inicio).getDate()}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold group-hover:text-blue-400 transition-colors">{evento.nombre}</h3>
+                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} />
+                        {new Date(evento.fecha_inicio).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users size={12} />
+                        {evento.boletos_vendidos ?? 0} reservas
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <span className={`px-3 py-1 text-white text-xs rounded-full ${
-                  evento.estado === 'programado' ? 'bg-green-600' : 'bg-gray-600'
-                }`}>
-                  {evento.estado}
+                <span className={`px-3 py-1 text-xs font-medium rounded-full border ${evento.estado === 'programado'
+                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                    : 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                  }`}>
+                  {evento.estado.charAt(0).toUpperCase() + evento.estado.slice(1)}
                 </span>
               </div>
             ))}

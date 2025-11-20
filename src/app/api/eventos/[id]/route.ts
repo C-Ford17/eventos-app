@@ -30,6 +30,14 @@ export async function GET(
             estado_reserva: true,
           },
         },
+        tiposEntrada: {
+          select: {
+            id: true,
+            nombre: true,
+            precio: true,
+            disponible: true,
+          },
+        },
       },
     });
 
@@ -41,19 +49,27 @@ export async function GET(
     }
 
     // Calcula estadísticas
-    const reservasConfirmadas = evento.reservas.filter(
-      (r) => r.estado_reserva === 'confirmada'
+    const reservasConfirmadas = (evento as any).reservas.filter(
+      (r: any) => r.estado_reserva === 'confirmada'
     );
     const totalReservas = reservasConfirmadas.reduce(
-      (sum, reserva) => sum + reserva.cantidad_boletos,
+      (sum: number, reserva: any) => sum + reserva.cantidad_boletos,
       0
     );
+
+    // Calcular precio mínimo de los tipos de entrada
+    let precioMinimo = 0;
+    if ((evento as any).tiposEntrada.length > 0) {
+      const precios = (evento as any).tiposEntrada.map((t: any) => Number(t.precio));
+      precioMinimo = Math.min(...precios);
+    }
 
     const eventoConStats = {
       ...evento,
       totalReservas,
       disponibilidad: evento.aforo_max - totalReservas,
       porcentajeOcupacion: ((totalReservas / evento.aforo_max) * 100).toFixed(1),
+      precio_base: precioMinimo,
     };
 
     return NextResponse.json({
