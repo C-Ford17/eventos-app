@@ -18,6 +18,8 @@ export default function Navbar() {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       setUser(JSON.parse(userStr));
+    } else {
+      setUser(null);
     }
 
     const handleScroll = () => {
