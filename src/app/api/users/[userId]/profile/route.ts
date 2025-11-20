@@ -22,6 +22,7 @@ export async function GET(
                 telefono: true,
                 foto_perfil_url: true,
                 preferencias_notificacion: true,
+                mp_access_token: true,
             },
         });
 
