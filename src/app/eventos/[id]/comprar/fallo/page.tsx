@@ -1,10 +1,37 @@
 'use client';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 
 export default function FalloCompraPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const eventoId = params.id;
+  const processedRef = useRef(false);
+
+  useEffect(() => {
+    const externalReference = searchParams.get('external_reference');
+
+    if (externalReference && !processedRef.current) {
+      processedRef.current = true;
+
+      // Llamar a la API para marcar como rechazado
+      fetch('/api/pagos/rechazar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reservaId: externalReference }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('Transacción marcada como rechazada:', data);
+        })
+        .catch((err) => {
+          console.error('Error al marcar transacción como rechazada:', err);
+        });
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center">
