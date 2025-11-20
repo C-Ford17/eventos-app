@@ -202,7 +202,7 @@ export default function ReservasPage() {
           {/* Mobile: Cards */}
           <div className="md:hidden space-y-4">
             {reservasFiltradas.map((reserva) => (
-              <div key={reserva.id} className="bg-[#1a1a1a]/60 border border-white/10 rounded-2xl p-4 space-y-4">
+              <div key={reserva.id} className="bg-[#1a1a1a]/60 border border-white/10 rounded-2xl p-4 space-y-4 overflow-hidden">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -210,11 +210,11 @@ export default function ReservasPage() {
                       <Calendar size={20} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold text-sm leading-tight">
+                      <h3 className="text-white font-semibold text-sm leading-tight truncate pr-2">
                         {reserva.evento.nombre}
                       </h3>
                       <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                        <MapPin size={10} />
+                        <MapPin size={10} className="shrink-0" />
                         <span className="truncate">{reserva.evento.ubicacion}</span>
                       </p>
                     </div>
@@ -226,34 +226,34 @@ export default function ReservasPage() {
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <p className="text-gray-500 text-xs">Fecha</p>
-                    <p className="text-white font-medium">
+                    <p className="text-white font-medium truncate">
                       {new Date(reserva.evento.fecha_inicio).toLocaleDateString('es-ES', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric'
                       })}
                     </p>
-                    <p className="text-gray-400 text-xs flex items-center gap-1">
-                      <Clock size={10} />
+                    <p className="text-gray-400 text-xs flex items-center gap-1 truncate">
+                      <Clock size={10} className="shrink-0" />
                       {new Date(reserva.evento.fecha_inicio).toLocaleTimeString('es-ES', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <p className="text-gray-500 text-xs">Boletos</p>
-                    <p className="text-white font-medium">{reserva.cantidad_boletos} entradas</p>
+                    <p className="text-white font-medium truncate">{reserva.cantidad_boletos} entradas</p>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <p className="text-gray-500 text-xs">Total</p>
-                    <p className="text-green-400 font-bold">
+                    <p className="text-green-400 font-bold truncate">
                       ${parseFloat(reserva.precio_total).toLocaleString('es-CO')}
                     </p>
-                    <p className="text-gray-400 text-xs flex items-center gap-1">
-                      <CreditCard size={10} />
+                    <p className="text-gray-400 text-xs flex items-center gap-1 truncate">
+                      <CreditCard size={10} className="shrink-0" />
                       {reserva.metodo_pago}
                     </p>
                   </div>

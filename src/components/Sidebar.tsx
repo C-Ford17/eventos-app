@@ -127,7 +127,7 @@ export default function Sidebar() {
                     </div>
 
                     {/* Toggle Button */}
-                    <div className="absolute -right-3 top-24">
+                    <div className="absolute -right-3 top-24 hidden md:block">
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
                             className="p-1 bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-500 transition-colors"

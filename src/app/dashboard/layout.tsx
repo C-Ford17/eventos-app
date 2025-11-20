@@ -2,9 +2,10 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Search, User, Menu } from 'lucide-react';
+import { Search, User, Menu, LogOut } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import Sidebar, { toggleMobileSidebar } from '@/components/Sidebar';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,8 @@ export default function DashboardLayout({
 }) {
   const [user, setUser] = useState<any>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -20,6 +23,12 @@ export default function DashboardLayout({
       setUser(JSON.parse(userStr));
     }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    router.push('/login');
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex">
@@ -58,22 +67,49 @@ export default function DashboardLayout({
             {/* Notification Dropdown */}
             {user && <NotificationBell userId={user.id} />}
 
-            <div className="flex items-center gap-3 pl-4 border-l border-white/10">
-              {user?.foto_perfil_url ? (
-                <img
-                  src={user.foto_perfil_url}
-                  alt={user.nombre}
-                  className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-lg"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
-                  {user?.nombre?.charAt(0).toUpperCase()}
+            {/* User Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-3 pl-4 border-l border-white/10 hover:opacity-80 transition-opacity"
+              >
+                {user?.foto_perfil_url ? (
+                  <img
+                    src={user.foto_perfil_url}
+                    alt={user.nombre}
+                    className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-lg"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
+                    {user?.nombre?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-white">{user?.nombre}</p>
+                  <p className="text-xs text-gray-500 capitalize">{user?.tipo_usuario}</p>
                 </div>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showUserMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowUserMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <LogOut size={16} />
+                        Cerrar Sesión
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
-              <div className="hidden md:block">
-                <p className="text-sm font-medium text-white">{user?.nombre}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.tipo_usuario}</p>
-              </div>
             </div>
           </div>
         </header>
