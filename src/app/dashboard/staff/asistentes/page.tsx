@@ -138,7 +138,8 @@ export default function ListaAsistentesPage() {
         <>
           {/* Tabla de asistentes */}
           <div className="bg-[#1a1a1a]/60 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
@@ -211,6 +212,62 @@ export default function ListaAsistentesPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4 p-4">
+              {asistentesFiltrados.map((asistente) => (
+                <div key={asistente.id} className="bg-white/5 rounded-xl p-4 border border-white/5 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                        {asistente.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-white font-bold">{asistente.nombre}</h3>
+                        <div className="flex items-center gap-1 text-gray-400 text-xs">
+                          <Mail size={12} />
+                          {asistente.email}
+                        </div>
+                      </div>
+                    </div>
+                    {asistente.estado_validacion === 'validado' ? (
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 text-xs rounded-lg font-medium">
+                        Validado
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs rounded-lg font-medium">
+                        Pendiente
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="bg-black/20 p-2 rounded-lg">
+                      <span className="text-gray-500 text-xs block mb-1">Boletos</span>
+                      <div className="flex items-center gap-1 text-white">
+                        <Ticket size={14} className="text-purple-400" />
+                        {asistente.cantidad_boletos}
+                      </div>
+                    </div>
+                    <div className="bg-black/20 p-2 rounded-lg">
+                      <span className="text-gray-500 text-xs block mb-1">Hora Validación</span>
+                      <span className="text-white">
+                        {asistente.fecha_validacion
+                          ? new Date(asistente.fecha_validacion).toLocaleTimeString('es-ES')
+                          : '-'
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <span className="text-xs text-gray-500 font-mono">
+                      ID: {asistente.codigo_qr.substring(0, 8)}...
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

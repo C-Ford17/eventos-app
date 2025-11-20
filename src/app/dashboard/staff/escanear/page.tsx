@@ -228,13 +228,14 @@ export default function EscanearEntradasPage() {
                 <Camera size={20} className="text-blue-400" />
                 Visor de Cámara
               </h2>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg font-medium transition border border-white/5"
                 >
                   <Upload size={16} />
-                  Subir Imagen
+                  <span className="hidden sm:inline">Subir Imagen</span>
+                  <span className="sm:hidden">Subir</span>
                 </button>
                 <button
                   onClick={handleActivarCamara}
@@ -295,7 +296,7 @@ export default function EscanearEntradasPage() {
                 <QrCode size={18} className="text-gray-400" />
                 Validación Manual
               </h3>
-              <form onSubmit={handleValidarManual} className="flex gap-3">
+              <form onSubmit={handleValidarManual} className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
                   value={codigoManual}
@@ -307,7 +308,7 @@ export default function EscanearEntradasPage() {
                 <button
                   type="submit"
                   disabled={validando}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition disabled:opacity-50 shadow-lg shadow-blue-600/20"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition disabled:opacity-50 shadow-lg shadow-blue-600/20 whitespace-nowrap"
                 >
                   Validar
                 </button>

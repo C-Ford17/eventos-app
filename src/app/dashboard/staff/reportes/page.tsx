@@ -256,7 +256,8 @@ export default function ReportesPage() {
                 <Ticket className="text-green-500" size={24} />
                 Desglose por Tipo de Entrada
               </h2>
-              <div className="overflow-x-auto">
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/10">
@@ -286,6 +287,36 @@ export default function ReportesPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {reporte.tiposEntrada.map((entrada, index) => (
+                  <div key={index} className="bg-white/5 p-4 border-b border-white/5 last:border-0">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-white font-bold">{entrada.tipo}</span>
+                      <span className="text-green-400 font-bold text-sm">{entrada.porcentaje.toFixed(1)}%</span>
+                    </div>
+
+                    <div className="w-full bg-white/10 rounded-full h-2 mb-4 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-emerald-400 h-full rounded-full transition-all duration-1000"
+                        style={{ width: `${entrada.porcentaje}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="bg-black/20 p-2 rounded-lg text-center">
+                        <span className="text-gray-500 text-xs block mb-1">Vendidas</span>
+                        <span className="text-white font-medium">{entrada.vendidas}</span>
+                      </div>
+                      <div className="bg-black/20 p-2 rounded-lg text-center">
+                        <span className="text-gray-500 text-xs block mb-1">Validadas</span>
+                        <span className="text-green-400 font-medium">{entrada.validadas}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

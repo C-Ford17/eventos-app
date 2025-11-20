@@ -207,7 +207,7 @@ export default function CrearEventoPage() {
                 <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
                 </div>
-                <p className="text-lg font-medium text-white mb-2">Arrastra una imagen o haz click aquí</p>
+                <p className="text-lg font-medium text-white mb-2 text-center">Sube una imagen</p>
                 <p className="text-gray-500 text-sm">Soporta JPG, PNG, WEBP (Máx. 5MB)</p>
               </div>
               <input
@@ -339,7 +339,7 @@ export default function CrearEventoPage() {
 
           <div className="space-y-4">
             {tiposEntrada.map((tipo, index) => (
-              <div key={index} className="flex gap-4 items-start animate-in fade-in slide-in-from-top-2 duration-200">
+              <div key={index} className="flex flex-col md:flex-row gap-4 items-start animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="flex-1 space-y-2">
                   <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider">Nombre</label>
                   <input
@@ -354,7 +354,7 @@ export default function CrearEventoPage() {
                     className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                   />
                 </div>
-                <div className="w-32 space-y-2">
+                <div className="w-full md:w-32 space-y-2">
                   <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider">Precio</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
@@ -373,7 +373,7 @@ export default function CrearEventoPage() {
                     />
                   </div>
                 </div>
-                <div className="pt-8">
+                <div className="self-end md:pt-8">
                   <button
                     type="button"
                     onClick={() => eliminarTipoEntrada(index)}
