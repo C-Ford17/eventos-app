@@ -18,6 +18,8 @@ model Usuario {
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
   telefono           String? // ✅ AGREGAR ESTA LÍNEA (opcional)
+  foto_perfil_url    String?
+  preferencias_notificacion Json?   @map("preferencias_notificacion") // Preferencias de notificación
   eventosCreados     Evento[]           @relation("OrganizadorEventos")
   reservas           Reserva[]          @relation("AsistenteReservas")
   productosServicios ProductoServicio[] @relation("ProveedorServicios")

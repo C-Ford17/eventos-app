@@ -6,9 +6,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     console.log('Login attempt:', body);
-    
+
     const { email, password } = body;
-    
+
     // Validación
     if (!email || !password) {
       return NextResponse.json(
@@ -47,12 +47,14 @@ export async function POST(req: Request) {
           id: user.id,
           nombre: user.nombre,
           email: user.email,
-          tipo_usuario: user.tipo_usuario
+          tipo_usuario: user.tipo_usuario,
+          foto_perfil_url: user.foto_perfil_url,
+          telefono: user.telefono
         }
       },
       { status: 200 }
     );
-    
+
   } catch (error: any) {
     console.error('Error en login:', error);
     return NextResponse.json(

@@ -1,8 +1,10 @@
 // src/app/dashboard/layout.tsx
 'use client';
-import { useEffect, useState } from 'react';
+import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { Search, User } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function DashboardLayout({
   children,
@@ -10,7 +12,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<any>(null);
-  const pathname = usePathname();
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -19,85 +20,58 @@ export default function DashboardLayout({
     }
   }, []);
 
-  // Define las opciones del sidebar según el rol
-  const getSidebarOptions = () => {
-    if (!user) return [];
-
-    const commonOptions = [
-      { label: 'Dashboard', href: `/dashboard/${user.tipo_usuario}` },
-    ];
-
-    switch (user.tipo_usuario) {
-      case 'asistente':
-        return [
-          ...commonOptions,
-          { label: 'Mis Reservas', href: '/dashboard/asistente/reservas' },
-          { label: 'Mis Boletos', href: '/dashboard/asistente/boletos' },
-          { label: 'Notificaciones', href: '/dashboard/asistente/notificaciones' },
-        ];
-      case 'organizador':
-        return [
-          ...commonOptions,
-          { label: 'Mis Eventos', href: '/dashboard/organizador/eventos' },
-          { label: 'Crear Evento', href: '/dashboard/organizador/crear' },
-          { label: 'Analíticas', href: '/dashboard/organizador/analiticas' },
-          { label: 'Proveedores', href: '/dashboard/organizador/proveedores' },
-          { label: 'Servicios Contratados', href: '/dashboard/organizador/servicios-contratados' }, // <--- agrega esta línea
-        ];
-      case 'proveedor':
-        return [
-          ...commonOptions,
-          { label: 'Mis Servicios', href: '/dashboard/proveedor/servicios' },
-          { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes' },
-          { label: 'Historial', href: '/dashboard/proveedor/historial' },
-        ];
-      case 'staff':  // NUEVO
-        return [
-          ...commonOptions,
-          { label: 'Escanear Entradas', href: '/dashboard/staff/escanear' },
-          { label: 'Lista de Asistentes', href: '/dashboard/staff/asistentes' },
-          { label: 'Reportes', href: '/dashboard/staff/reportes' },
-        ];
-      default:
-        return commonOptions;
-    }
-  };
-
-  const sidebarOptions = getSidebarOptions();
-
   return (
-    <div className="min-h-screen bg-gray-950 flex">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-neutral-900 p-4 border-r border-neutral-800">
-        <div className="mb-8">
-          <Link href="/" className="text-xl font-bold text-white">
-            EventPlatform
-          </Link>
-        </div>
+    <div className="min-h-screen bg-[#0a0a0a] flex">
+      {/* Background Effects */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#0a0a0a] to-[#0a0a0a]"></div>
+        <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-blue-500/10 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-purple-500/10 rounded-full blur-[100px]"></div>
+      </div>
 
-        <nav className="space-y-2">
-          <div className="text-xs uppercase text-gray-500 mb-2 px-3">
-            {user?.tipo_usuario || 'Dashboard'}
-          </div>
-          {sidebarOptions.map((option) => (
-            <Link
-              key={option.href}
-              href={option.href}
-              className={`block px-3 py-2 rounded transition-colors ${
-                pathname === option.href
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-neutral-800 hover:text-white'
-              }`}
-            >
-              {option.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
+      {/* Sidebar */}
+      <Sidebar />
 
       {/* Main content */}
-      <main className="ml-64 flex-1 p-8">
-        {children}
+      <main className="flex-1 ml-20 md:ml-72 p-8 transition-all duration-300 relative z-10">
+        {/* Topbar */}
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              Bienvenido, <span className="text-blue-400">{user?.nombre?.split(' ')[0]}</span>
+            </h1>
+            <p className="text-gray-400 text-sm">
+              {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Notification Dropdown */}
+            {user && <NotificationBell userId={user.id} />}
+
+            <div className="flex items-center gap-3 pl-4 border-l border-white/10">
+              {user?.foto_perfil_url ? (
+                <img
+                  src={user.foto_perfil_url}
+                  alt={user.nombre}
+                  className="w-10 h-10 rounded-full object-cover border border-white/10 shadow-lg"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
+                  {user?.nombre?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="hidden md:block">
+                <p className="text-sm font-medium text-white">{user?.nombre}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.tipo_usuario}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

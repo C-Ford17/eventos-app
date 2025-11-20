@@ -20,7 +20,7 @@ export default function BoletaQRPage() {
       .then(data => {
         if (data.success) {
           setReserva(data.reserva);
-          
+
           // Generar QR desde el ID de la reserva
           QRCode.toDataURL(data.reserva.id, {
             width: 300,
@@ -45,34 +45,34 @@ export default function BoletaQRPage() {
   };
 
   const handleDescargarPDF = () => {
-  if (reserva && qrDataURL) {
-    // Usar entradas del backend si existen, sino crear fallback
+    if (reserva && qrDataURL) {
+      // Usar entradas del backend si existen, sino crear fallback
 
-    const entradas = reserva.entradas || [{
-      nombre: 'General',
-      cantidad: reserva.cantidad_boletos,
-      precio: parseFloat(reserva.precio_total) / reserva.cantidad_boletos,
-    }];
-    console.log("Reserva recibida:", JSON.stringify(reserva, null, 2));
-    console.log("Entradas agrupadas:", JSON.stringify(entradas, null, 2));
+      const entradas = reserva.entradas || [{
+        nombre: 'General',
+        cantidad: reserva.cantidad_boletos,
+        precio: parseFloat(reserva.precio_total) / reserva.cantidad_boletos,
+      }];
+      console.log("Reserva recibida:", JSON.stringify(reserva, null, 2));
+      console.log("Entradas agrupadas:", JSON.stringify(entradas, null, 2));
 
 
-    generarPDFBoleto({
-      evento: {
-        nombre: reserva.evento.nombre,
-        fecha: reserva.evento.fecha_inicio,
-        lugar: reserva.evento.ubicacion,
-      },
-      entradas: entradas,
-      numeroOrden: reserva.numero_orden,
-      reservaId: reserva.id,
-      fechaCompra: reserva.fecha_reserva,
-      total: parseFloat(reserva.precio_total),
-      qrDataURL: qrDataURL,
-      metodoPago: reserva.metodo_pago || 'Tarjeta',
-    });
-  }
-};
+      generarPDFBoleto({
+        evento: {
+          nombre: reserva.evento.nombre,
+          fecha: reserva.evento.fecha_inicio,
+          lugar: reserva.evento.ubicacion,
+        },
+        entradas: entradas,
+        numeroOrden: reserva.numero_orden,
+        reservaId: reserva.id,
+        fechaCompra: reserva.fecha_reserva,
+        total: parseFloat(reserva.precio_total),
+        qrDataURL: qrDataURL,
+        metodoPago: reserva.metodo_pago || 'Tarjeta',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -91,88 +91,112 @@ export default function BoletaQRPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 py-8">
-      <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-white mb-8 text-center">
-          Tu Boleto
-        </h1>
+    <div className="min-h-screen bg-[#0a0a0a] py-12 px-4 flex items-center justify-center relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="bg-neutral-800 p-6 rounded-lg mb-6">
-          <h2 className="text-2xl font-semibold text-white mb-4">
-            {reserva.evento.nombre}
-          </h2>
-          
-          <div className="space-y-2 mb-6">
-            <p className="text-gray-300">
-              <strong>Fecha:</strong> {new Date(reserva.evento.fecha_inicio).toLocaleDateString('es-ES', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </p>
-            <p className="text-gray-300">
-              <strong>Lugar:</strong> {reserva.evento.ubicacion}
-            </p>
-            <p className="text-gray-300">
-              <strong>Boletos:</strong> {reserva.cantidad_boletos}
-            </p>
-          </div>
+      <div className="max-w-md w-full relative z-10">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Tu Boleto Digital</h1>
+          <p className="text-gray-400">Presenta este código QR en la entrada</p>
+        </div>
 
-          {/* QR Code */}
-          <div className="bg-white p-6 rounded-lg mb-6">
-            {qrDataURL ? (
-              <div className="text-center">
-                <img 
-                  src={qrDataURL} 
-                  alt="Código QR" 
-                  className="w-64 h-64 mx-auto mb-3"
-                />
-                <p className="text-gray-800 font-mono text-xs break-all px-4">
-                  {reserva.id}
-                </p>
-                <p className="text-gray-600 text-sm mt-2">
-                  Muestra este código en la entrada
-                </p>
+        <div className="bg-[#1a1a1a]/60 border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative">
+          {/* Top Decoration */}
+          <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+
+          <div className="p-8">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
+                {reserva.evento.nombre}
+              </h2>
+              <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
+                <span className="px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                  {new Date(reserva.evento.fecha_inicio).toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'short'
+                  })}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                  {new Date(reserva.evento.fecha_inicio).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
               </div>
-            ) : (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+
+            {/* QR Code Container */}
+            <div className="bg-white p-4 rounded-2xl mb-8 shadow-lg mx-auto max-w-[280px]">
+              {qrDataURL ? (
+                <div className="text-center">
+                  <img
+                    src={qrDataURL}
+                    alt="Código QR"
+                    className="w-full h-auto mb-2"
+                  />
+                  <p className="text-gray-900 font-mono text-xs font-bold tracking-wider break-all">
+                    {reserva.id}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Ubicación</p>
+                <p className="text-white font-medium text-sm line-clamp-2">{reserva.evento.ubicacion}</p>
               </div>
-            )}
-          </div>
+              <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Boletos</p>
+                <p className="text-white font-medium text-sm">{reserva.cantidad_boletos} Personas</p>
+              </div>
+            </div>
 
-          {/* Botones */}
-          <div className="space-y-3">
-            <button
-              onClick={handleDescargarPDF}
-              disabled={!qrDataURL}
-              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Descargar PDF
-            </button>
-            
-            <button
-              onClick={handleDescargarImagen}
-              disabled={!qrDataURL}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Descargar Solo QR
-            </button>
+            {/* Actions */}
+            <div className="space-y-3">
+              <button
+                onClick={handleDescargarPDF}
+                disabled={!qrDataURL}
+                className="w-full py-3.5 bg-white text-black hover:bg-gray-100 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Descargar PDF
+              </button>
 
-            <Link
-              href="/dashboard/asistente/boletos"
-              className="w-full py-3 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg font-semibold transition block text-center"
-            >
-              Volver a mis boletos
-            </Link>
+              <button
+                onClick={handleDescargarImagen}
+                disabled={!qrDataURL}
+                className="w-full py-3.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Guardar QR
+              </button>
+            </div>
           </div>
+        </div>
+
+        <div className="text-center mt-8">
+          <Link
+            href="/dashboard/asistente/boletos"
+            className="text-gray-400 hover:text-white transition-colors text-sm font-medium inline-flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Volver a mis boletos
+          </Link>
         </div>
       </div>
     </div>
