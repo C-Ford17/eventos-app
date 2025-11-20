@@ -1,10 +1,10 @@
 // src/app/dashboard/layout.tsx
 'use client';
-import Sidebar from '@/components/Sidebar';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Search, User, Menu } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
+import Sidebar, { toggleMobileSidebar } from '@/components/Sidebar';
 
 export default function DashboardLayout({
   children,
@@ -37,6 +37,14 @@ export default function DashboardLayout({
       <main className="flex-1 md:ml-20 lg:ml-72 p-4 md:p-8 transition-all duration-300 relative z-10">
         {/* Topbar */}
         <header className="flex justify-between items-center mb-8">
+          {/* Hamburger Menu - Mobile Only */}
+          <button
+            onClick={toggleMobileSidebar}
+            className="md:hidden p-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            aria-label="Toggle menu"
+          >
+            <Menu size={24} />
+          </button>
           <div>
             <h1 className="text-2xl font-bold text-white">
               Bienvenido, <span className="text-blue-400">{user?.nombre?.split(' ')[0]}</span>
