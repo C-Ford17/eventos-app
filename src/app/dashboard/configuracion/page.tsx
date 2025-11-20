@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { User, Bell, Shield, Save, Mail, Phone, Lock, Upload, Check, X, AlertCircle } from 'lucide-react';
+import ConnectMercadoPago from '@/components/ConnectMercadoPago';
 
 export default function SettingsPage() {
     const [user, setUser] = useState<any>(null);
@@ -30,6 +31,8 @@ export default function SettingsPage() {
         recordatorios: true,
         actualizaciones_seguridad: true,
     });
+
+    const [isMpConnected, setIsMpConnected] = useState(false);
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -62,6 +65,7 @@ export default function SettingsPage() {
                     email: data.user.email || '',
                     telefono: data.user.telefono || '',
                 });
+                setIsMpConnected(!!data.user.mp_access_token);
 
                 // Update user object with fresh data (including photo)
                 const updatedUser = { ...user, ...data.user };
@@ -384,6 +388,10 @@ export default function SettingsPage() {
                                         )}
                                         Guardar Cambios
                                     </button>
+                                </div>
+
+                                <div className="pt-6 border-t border-white/5">
+                                    <ConnectMercadoPago userId={user.id} isConnected={isMpConnected} />
                                 </div>
                             </div>
                         )}
