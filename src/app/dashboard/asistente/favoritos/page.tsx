@@ -63,7 +63,7 @@ export default function FavoritosPage() {
     };
 
     const formatearPrecio = (precio: number | null | undefined) => {
-        if (precio === null || precio === undefined || precio === 0) {
+        if (!precio || precio === 0) {
             return 'Gratis';
         }
         return `$${precio.toLocaleString('es-CO')}`;
@@ -121,11 +121,15 @@ export default function FavoritosPage() {
                             key={fav.id}
                             className="group relative bg-[#1a1a1a]/60 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10"
                         >
-                            {/* Remove Button */}
+                            {/* Remove Button - Outside Link */}
                             <button
-                                onClick={() => handleRemoveFavorite(fav.evento_id, fav.id)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleRemoveFavorite(fav.evento_id, fav.id);
+                                }}
                                 disabled={removingId === fav.id}
-                                className="absolute top-3 right-3 z-10 p-2 bg-black/50 backdrop-blur-md border border-white/10 hover:bg-red-500/20 hover:border-red-500/50 rounded-lg transition-all group/btn"
+                                className="absolute top-3 right-3 z-20 p-2 bg-black/50 backdrop-blur-md border border-white/10 hover:bg-red-500/20 hover:border-red-500/50 rounded-lg transition-all group/btn"
                                 aria-label="Quitar de favoritos"
                             >
                                 {removingId === fav.id ? (
