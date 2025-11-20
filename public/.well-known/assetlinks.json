@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.eventos_app_nu.twa",
+      "sha256_cert_fingerprints": [
+        "71:83:AC:8D:11:FF:92:D9:71:61:31:AB:68:EE:26:0C:2A:7E:AA:52:D4:EC:9C:AF:A9:2A:BB:7D:F8:44:5E:00"
+      ]
+    }
+  }
+]
