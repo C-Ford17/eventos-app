@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       pending: `${appUrl}/eventos/${eventoId}/comprar/pending`,
     },
     auto_return: 'approved',
-    binary_mode: true, // Recomended for Marketplace to avoid pending payments
+    binary_mode: false, // Disabled to avoid strict tokenization issues in Sandbox
   };
 
   // Si es Marketplace (vendedor conectado), agregamos marketplace_fee
