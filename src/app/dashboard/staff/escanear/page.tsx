@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import jsQR from 'jsqr';
 import { Camera, Upload, Search, CheckCircle, XCircle, QrCode, AlertCircle } from 'lucide-react';
-import EventoSelector from '@/components/EventoSelector';
 import { useStaff } from '@/contexts/StaffContext';
 
 // Importa el escáner de forma dinámica para evitar problemas de SSR
@@ -216,8 +215,6 @@ export default function EscanearEntradasPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      {/* ✅ Componente EventoSelector */}
-      <EventoSelector />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Visor de cámara */}
@@ -389,7 +386,7 @@ export default function EscanearEntradasPage() {
                       </p>
                       <p className="text-gray-500 text-xs">{actividad.hora}</p>
                       {actividad.mensaje && (
-                        <p className="text-gray-400 text-xs mt-1 bg-black/20 p-1.5 rounded border border-white/5">
+                        <p className="text-gray-400 text-xs mt-1 bg-black/20 p-1.5 rounded border border-white/5 break-words">
                           {actividad.mensaje}
                         </p>
                       )}

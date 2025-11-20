@@ -1,6 +1,6 @@
 // src/app/registro/page.tsx
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Mail, Lock, ArrowRight, Loader2, AlertCircle, Briefcase } from 'lucide-react';
@@ -12,10 +12,28 @@ export default function RegistroPage() {
     nombre: '',
     email: '',
     password: '',
-    rol: 'asistente'
+    rol: 'asistente',
+    evento_id: '' // ✅ Nuevo campo
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [eventos, setEventos] = useState<any[]>([]);
+
+  // ✅ Cargar eventos disponibles
+  useEffect(() => {
+    const fetchEventos = async () => {
+      try {
+        const res = await fetch('/api/eventos?estado=programado');
+        const data = await res.json();
+        if (data.success) {
+          setEventos(data.eventos);
+        }
+      } catch (error) {
+        console.error('Error cargando eventos:', error);
+      }
+    };
+    fetchEventos();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +49,8 @@ export default function RegistroPage() {
           nombre: formData.nombre,
           email: formData.email,
           password: formData.password,
-          tipo_usuario: formData.rol // Mapear 'rol' a 'tipo_usuario' si la API lo espera así
+          tipo_usuario: formData.rol, // Mapear 'rol' a 'tipo_usuario' si la API lo espera así
+          evento_id: formData.evento_id // ✅ Enviar evento seleccionado
         }),
       });
 
@@ -136,6 +155,26 @@ export default function RegistroPage() {
               </div>
             </div>
 
+            {/* Selector de Evento (Solo para Staff) */}
+            {formData.rol === 'staff' && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="text-sm font-medium text-gray-300 ml-1">Seleccionar Evento</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                  <CustomDropdown
+                    options={eventos.map(e => ({ value: e.id, label: e.nombre }))}
+                    value={formData.evento_id}
+                    onChange={(value) => setFormData({ ...formData, evento_id: value })}
+                    placeholder="Selecciona el evento a gestionar"
+                    buttonClassName="pl-12"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 ml-1">
+                  *Como staff, serás asignado permanentemente a este evento.
+                </p>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
@@ -164,7 +203,7 @@ export default function RegistroPage() {
             </p>
           </div>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

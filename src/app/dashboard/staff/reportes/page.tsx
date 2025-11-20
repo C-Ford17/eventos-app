@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useStaff } from '@/contexts/StaffContext';
-import EventoSelector from '@/components/EventoSelector';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from "jspdf";
@@ -113,15 +112,6 @@ export default function ReportesPage() {
         </div>
       </div>
 
-      {/* Selector de evento */}
-      <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Calendar size={20} className="text-purple-500" />
-          Seleccionar Evento
-        </h2>
-        <EventoSelector />
-      </div>
-
       {reporte ? (
         <div className="space-y-8 animate-in fade-in duration-500">
           {/* Resumen general */}
@@ -214,9 +204,9 @@ export default function ReportesPage() {
                     <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center text-purple-400 shrink-0">
                       <Calendar size={20} />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Evento</p>
-                      <p className="text-white font-bold text-lg">{eventoActual.nombre}</p>
+                      <p className="text-white font-bold text-lg break-words">{eventoActual.nombre}</p>
                       <p className="text-gray-400 text-sm mt-1">
                         {new Date(eventoActual.fecha_inicio).toLocaleDateString('es-ES', {
                           weekday: 'long',
@@ -229,16 +219,16 @@ export default function ReportesPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                    <div className="p-4 bg-white/5 rounded-xl border border-white/5 min-w-0">
                       <div className="flex items-center gap-2 mb-2 text-gray-400">
-                        <MapPin size={16} />
+                        <MapPin size={16} className="shrink-0" />
                         <span className="text-xs uppercase tracking-wider">Ubicación</span>
                       </div>
-                      <p className="text-white font-medium">{eventoActual.ubicacion}</p>
+                      <p className="text-white font-medium break-words">{eventoActual.ubicacion}</p>
                     </div>
-                    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                    <div className="p-4 bg-white/5 rounded-xl border border-white/5 min-w-0">
                       <div className="flex items-center gap-2 mb-2 text-gray-400">
-                        <Users size={16} />
+                        <Users size={16} className="shrink-0" />
                         <span className="text-xs uppercase tracking-wider">Aforo</span>
                       </div>
                       <p className="text-white font-medium">{eventoActual.aforo_max} personas</p>

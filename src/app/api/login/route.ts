@@ -49,7 +49,8 @@ export async function POST(req: Request) {
           email: user.email,
           tipo_usuario: user.tipo_usuario,
           foto_perfil_url: user.foto_perfil_url,
-          telefono: user.telefono
+          telefono: user.telefono,
+          eventoStaffId: user.eventoStaffId // ✅ Incluir evento asignado
         }
       },
       { status: 200 }

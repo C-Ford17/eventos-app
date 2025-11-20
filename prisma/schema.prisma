@@ -27,6 +27,8 @@ model Usuario {
   auditorias         Auditoria[]
   notificaciones     Notificacion[]
   favoritos          Favorito[]         @relation("UsuarioFavoritos")
+  eventoStaffId      String?            // ID del evento asignado (Solo para Staff)
+  eventoStaff        Evento?            @relation("StaffEvento", fields: [eventoStaffId], references: [id])
 
   @@map("usuarios")
 }
@@ -66,6 +68,7 @@ model Evento {
   productosServiciosEvento EventoProductoServicio[]
   reportes                 Reporte[]
   favoritos                Favorito[]               @relation("EventoFavoritos")
+  staff                    Usuario[]                @relation("StaffEvento") // ← RELACIÓN STAFF
 
   @@map("eventos")
 }

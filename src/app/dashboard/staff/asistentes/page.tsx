@@ -2,8 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useStaff } from '@/contexts/StaffContext';
-import EventoSelector from '@/components/EventoSelector';
-import { Search, Filter, Download, CheckCircle, XCircle, Users, Mail, Ticket, ChevronDown } from 'lucide-react';
+import { Search, Filter, Download, CheckCircle, XCircle, Users, Mail, Ticket, ChevronDown, Calendar, Clock } from 'lucide-react';
 
 interface Asistente {
   id: string;
@@ -17,7 +16,7 @@ interface Asistente {
 }
 
 export default function ListaAsistentesPage() {
-  const { eventoSeleccionado } = useStaff();
+  const { eventoSeleccionado, eventoActual } = useStaff();
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [asistentes, setAsistentes] = useState<Asistente[]>([]);
@@ -67,8 +66,34 @@ export default function ListaAsistentesPage() {
         <h1 className="text-3xl font-bold text-white">Lista de Asistentes</h1>
       </div>
 
-      {/* Selector de evento */}
-      <EventoSelector />
+      {/* Detalles del Evento */}
+      {eventoActual && (
+        <div className="bg-[#1a1a1a]/60 border border-white/10 p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400 shrink-0">
+              <Calendar size={24} />
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Evento Activo</p>
+              <h2 className="text-xl font-bold text-white">{eventoActual.nombre}</h2>
+              <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Clock size={14} />
+                  {new Date(eventoActual.fecha_inicio).toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users size={14} />
+                  {eventoActual.aforo_max} aforo
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -223,11 +248,11 @@ export default function ListaAsistentesPage() {
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
                         {asistente.nombre.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <h3 className="text-white font-bold">{asistente.nombre}</h3>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-white font-bold truncate">{asistente.nombre}</h3>
                         <div className="flex items-center gap-1 text-gray-400 text-xs">
-                          <Mail size={12} />
-                          {asistente.email}
+                          <Mail size={12} className="shrink-0" />
+                          <span className="truncate">{asistente.email}</span>
                         </div>
                       </div>
                     </div>
