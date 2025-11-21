@@ -86,13 +86,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verifica que el evento existe y está disponible
+    // 1. EXPIRACIÓN AUTOMÁTICA: Rechazar reservas pendientes antiguas (> 15 min)
+    const quinceMinutosAtras = new Date(Date.now() - 15 * 60 * 1000);
+
+    await prisma.reserva.updateMany({
+      where: {
+        estado_reserva: 'pendiente',
+        fecha_reserva: {
+          lt: quinceMinutosAtras,
+        },
+      },
+      data: {
+        estado_reserva: 'rechazada',
+      },
+    });
+
+    // 2. Obtener evento y sus reservas activas (confirmadas + pendientes recientes)
     const evento = await prisma.evento.findUnique({
       where: { id: evento_id },
       include: {
         reservas: {
           where: {
-            estado_reserva: 'confirmada',
+            estado_reserva: {
+              in: ['confirmada', 'pendiente'], // Contamos pendientes para bloquear cupo
+            },
           },
         },
       },
@@ -124,18 +141,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // Calcula boletos vendidos
-    const boletosVendidos = evento.reservas.reduce(
+    // Calcula boletos vendidos (Confirmados + Pendientes)
+    const boletosOcupados = evento.reservas.reduce(
       (sum, r) => sum + r.cantidad_boletos,
       0
     );
 
     // Verifica disponibilidad
-    if (boletosVendidos + cantidad_boletos > evento.aforo_max) {
+    if (boletosOcupados + cantidad_boletos > evento.aforo_max) {
       return NextResponse.json(
         {
           error: 'No hay suficientes boletos disponibles',
-          disponibles: evento.aforo_max - boletosVendidos,
+          disponibles: evento.aforo_max - boletosOcupados,
         },
         { status: 400 }
       );
