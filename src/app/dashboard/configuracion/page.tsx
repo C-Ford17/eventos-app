@@ -65,7 +65,7 @@ export default function SettingsPage() {
                     email: data.user.email || '',
                     telefono: data.user.telefono || '',
                 });
-                setIsMpConnected(!!data.user.mp_access_token);
+                setIsMpConnected(!!data.user.is_mp_connected);
 
                 // Update user object with fresh data (including photo)
                 const updatedUser = { ...user, ...data.user };
@@ -391,7 +391,9 @@ export default function SettingsPage() {
                                 </div>
 
                                 <div className="pt-6 border-t border-white/5">
-                                    <ConnectMercadoPago userId={user.id} isConnected={isMpConnected} />
+                                    {(user.tipo_usuario === 'organizador' || user.tipo_usuario === 'proveedor') && (
+                                        <ConnectMercadoPago userId={user.id} isConnected={isMpConnected} />
+                                    )}
                                 </div>
                             </div>
                         )}

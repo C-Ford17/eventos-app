@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma'; // Adjust import path if necessary
+import { prisma } from '@/lib/prisma';
+import { encrypt } from '@/lib/encryption';
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -39,13 +40,13 @@ export async function GET(req: Request) {
             return NextResponse.redirect(`${process.env.APP_URL}/dashboard/organizador/perfil?error=token_exchange_failed`);
         }
 
-        // Save tokens to user
+        // Save tokens to user (Encrypted)
         await prisma.usuario.update({
             where: { id: userId },
             data: {
-                mp_access_token: data.access_token,
+                mp_access_token: encrypt(data.access_token),
                 mp_public_key: data.public_key,
-                mp_refresh_token: data.refresh_token,
+                mp_refresh_token: encrypt(data.refresh_token),
                 mp_user_id: String(data.user_id),
                 mp_expires_in: data.expires_in,
             },
