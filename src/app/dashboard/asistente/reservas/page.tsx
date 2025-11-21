@@ -67,6 +67,26 @@ export default function ReservasPage() {
           </h1>
           <p className="text-gray-400 mt-1">Historial completo de tus compras y reservas</p>
         </div>
+        {reservas.some(r => r.estado_reserva === 'rechazada') && (
+          <button
+            onClick={async () => {
+              if (!confirm('¿Estás seguro de eliminar todas las reservas rechazadas?')) return;
+              const user = JSON.parse(localStorage.getItem('user') || '{}');
+              try {
+                const res = await fetch(`/api/reservas/limpiar?usuario_id=${user.id}`, { method: 'DELETE' });
+                if (res.ok) {
+                  setReservas(prev => prev.filter(r => r.estado_reserva !== 'rechazada'));
+                }
+              } catch (err) {
+                console.error('Error eliminando:', err);
+              }
+            }}
+            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            <Ticket className="w-4 h-4" />
+            Limpiar Rechazadas
+          </button>
+        )}
       </div>
 
       {/* Filtros */}

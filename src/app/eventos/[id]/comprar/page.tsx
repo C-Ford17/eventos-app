@@ -112,14 +112,24 @@ export default function SeleccionEntradasPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Hero Section with Gradient */}
-      <div className="relative h-80 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 overflow-hidden">
-        {/* Animated gradient orbs */}
-        <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-purple-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      {/* Hero Section with Blur Effect */}
+      <div className="relative h-80 overflow-hidden">
+        {/* Background Image with Blur */}
+        {evento?.imagen_url ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-xl scale-110 opacity-50"
+            style={{ backgroundImage: `url(${evento.imagen_url})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-black opacity-50" />
+        )}
 
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-[#0a0a0a]/40" />
+        <div className="absolute inset-0 bg-black/60" />
+
+        {/* Animated gradient orbs */}
+        <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl animate-pulse pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
 
         {/* Content */}
         <div className="relative h-full flex items-end">

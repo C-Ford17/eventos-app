@@ -126,21 +126,23 @@ export default function AsistentePanel() {
         ) : (
           <div className="space-y-4">
             {proximosEventos.map((reserva) => (
-              <div key={reserva.id} className="group bg-white/5 border border-white/5 p-4 rounded-xl hover:bg-white/10 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
+              <div key={reserva.id} className="group bg-white/5 border border-white/5 p-4 rounded-xl hover:bg-white/10 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-4 min-w-0">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex flex-col items-center justify-center text-blue-400 shrink-0">
                     <span className="text-xs font-bold uppercase">{new Date(reserva.evento.fecha_inicio).toLocaleDateString('es-ES', { month: 'short' })}</span>
                     <span className="text-lg font-bold leading-none">{new Date(reserva.evento.fecha_inicio).getDate()}</span>
                   </div>
-                  <div>
-                    <h3 className="text-white font-semibold group-hover:text-blue-400 transition-colors">{reserva.evento.nombre}</h3>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <MapPin size={12} />
-                        {reserva.evento.ubicacion}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-white font-semibold group-hover:text-blue-400 transition-colors truncate pr-2">
+                      {reserva.evento.nombre}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-400">
+                      <span className="flex items-center gap-1 min-w-0">
+                        <MapPin size={12} className="shrink-0" />
+                        <span className="truncate">{reserva.evento.ubicacion}</span>
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Ticket size={12} />
+                      <span className="flex items-center gap-1 whitespace-nowrap">
+                        <Ticket size={12} className="shrink-0" />
                         {reserva.cantidad_boletos} boletos
                       </span>
                     </div>
@@ -148,7 +150,7 @@ export default function AsistentePanel() {
                 </div>
                 <Link
                   href={`/boletos/${reserva.id}`}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors text-center"
+                  className="w-full sm:w-auto px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors text-center whitespace-nowrap"
                 >
                   Ver boleto
                 </Link>
