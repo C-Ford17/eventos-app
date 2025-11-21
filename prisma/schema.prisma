@@ -19,23 +19,27 @@ model Usuario {
   updatedAt          DateTime           @updatedAt @map("updated_at")
   telefono           String? // ✅ AGREGAR ESTA LÍNEA (opcional)
   foto_perfil_url    String?
+  bloqueado          Boolean            @default(false) // Para bloquear usuarios
   preferencias_notificacion Json?   @map("preferencias_notificacion") // Preferencias de notificación
   
   // Mercado Pago Connect
-  mp_access_token    String?
-  mp_public_key      String?
-  mp_refresh_token   String?
-  mp_user_id         String?
-  mp_expires_in      Int?
-  eventosCreados     Evento[]           @relation("OrganizadorEventos")
-  reservas           Reserva[]          @relation("AsistenteReservas")
-  productosServicios ProductoServicio[] @relation("ProveedorServicios")
-  reportes           Reporte[]
-  auditorias         Auditoria[]
-  notificaciones     Notificacion[]
-  favoritos          Favorito[]         @relation("UsuarioFavoritos")
-  eventoStaffId      String?            // ID del evento asignado (Solo para Staff)
-  eventoStaff        Evento?            @relation("StaffEvento", fields: [eventoStaffId], references: [id])
+  mp_access_token     String?
+  mp_public_key       String?
+  mp_refresh_token    String?
+  mp_user_id          String?
+  mp_expires_in       Int?
+  eventosCreados      Evento[]           @relation("OrganizadorEventos")
+  reservas            Reserva[]          @relation("AsistenteReservas")
+  productosServicios  ProductoServicio[] @relation("ProveedorServicios")
+  reportesCreados     Reporte[]          @relation("ReportesCreados")
+  reportesRecibidos   Reporte[]          @relation("UsuarioReportado")
+  reportesGestionados Reporte[]          @relation("ReportesGestionados")
+  auditorias          Auditoria[]
+  notificaciones      Notificacion[]
+  favoritos           Favorito[]         @relation("UsuarioFavoritos")
+  eventoStaffId       String? // ID del evento asignado (Solo para Staff)
+  eventoStaff         Evento?            @relation("StaffEvento", fields: [eventoStaffId], references: [id])
+
 
   @@map("usuarios")
 }
@@ -67,7 +71,7 @@ model Evento {
   imagen_url     String? // <--- AGREGA ESTA LÍNEA
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
-
+  bloqueado      Boolean  @default(false) // Para bloquear eventos
   categoria                CategoriaEvento          @relation(fields: [categoria_id], references: [id])
   organizador              Usuario                  @relation("OrganizadorEventos", fields: [organizador_id], references: [id])
   reservas                 Reserva[]
@@ -164,11 +168,14 @@ model ProductoServicio {
   categoria      String
   precio_base    Decimal  @db.Decimal(10, 2)
   disponibilidad Boolean  @default(true)
+  bloqueado      Boolean  @default(false) // Para bloquear servicios
+  imagen_url     String? // URL de la imagen del servicio
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   proveedor Usuario                  @relation("ProveedorServicios", fields: [proveedor_id], references: [id])
   eventos   EventoProductoServicio[]
+  reportes  Reporte[]
 
   @@map("productos_servicios")
 }
@@ -205,16 +212,34 @@ model Notificacion {
 
 // REPORTES
 model Reporte {
-  id               String   @id @default(uuid())
-  evento_id        String
-  organizador_id   String
-  tipo_reporte     String
-  contenido        String   @db.Text
-  fecha_generacion DateTime @default(now())
-  createdAt        DateTime @default(now()) @map("created_at")
+  id           String @id @default(uuid())
+  tipo_reporte String // 'evento' | 'servicio' | 'usuario' | 'bug'
+  categoria    String // Specific category based on type
+  descripcion  String @db.Text
+  estado       String @default("pendiente") // 'pendiente' | 'en_revision' | 'resuelto' | 'rechazado'
+  prioridad    String @default("media") // 'baja' | 'media' | 'alta' | 'critica'
 
-  evento      Evento  @relation(fields: [evento_id], references: [id])
-  organizador Usuario @relation(fields: [organizador_id], references: [id])
+  // Reporter
+  reportante_id String
+  reportante    Usuario @relation("ReportesCreados", fields: [reportante_id], references: [id])
+
+  // Reported entities (optional, depends on tipo_reporte)
+  evento_id String?
+  evento    Evento? @relation(fields: [evento_id], references: [id])
+
+  servicio_id String?
+  servicio    ProductoServicio? @relation(fields: [servicio_id], references: [id])
+
+  usuario_reportado_id String?
+  usuario_reportado    Usuario? @relation("UsuarioReportado", fields: [usuario_reportado_id], references: [id])
+
+  // Admin response
+  respuesta_admin String?  @db.Text
+  admin_id        String?
+  admin           Usuario? @relation("ReportesGestionados", fields: [admin_id], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("reportes")
 }

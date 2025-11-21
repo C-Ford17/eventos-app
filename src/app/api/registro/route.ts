@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Valida que el tipo de usuario sea válido
+    // Valida que el tipo de usuario sea válido (EXCLUYENDO ADMIN)
     const tiposValidos = ['asistente', 'organizador', 'proveedor', 'staff'];
     const tipoFinal = tiposValidos.includes(tipo_usuario) ? tipo_usuario : 'asistente';
 

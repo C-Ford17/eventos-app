@@ -17,12 +17,15 @@ export async function GET(request: Request) {
       where,
       include: {
         productosServicios: { // ✅ Cambio: usar productosServicios
-          where: categoria ? {
-            categoria: {
-              contains: categoria,
-              mode: 'insensitive',
-            },
-          } : undefined,
+          where: {
+            bloqueado: false, // ✅ Excluir servicios bloqueados
+            ...(categoria && {
+              categoria: {
+                contains: categoria,
+                mode: 'insensitive',
+              },
+            }),
+          },
           orderBy: {
             precio_base: 'asc',
           },

@@ -1,6 +1,7 @@
 // src/app/api/eventos/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createAuditLog } from '@/lib/audit';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,7 @@ export async function GET(req: Request) {
         ...(id && { id }), // Filtrar por ID si existe
         ...(categoria && { categoria_id: categoria }),
         estado,
+        bloqueado: false, // ✅ Excluir eventos bloqueados
       },
       include: {
         categoria: true,
@@ -179,6 +181,15 @@ export async function POST(req: Request) {
           },
         },
       },
+    });
+
+    // Registrar creación de evento en auditoría
+    await createAuditLog({
+      usuario_id: organizador_id,
+      accion: 'crear_evento',
+      tabla: 'eventos',
+      registro_id: evento.id,
+      detalles: `Evento creado: ${evento.nombre}`,
     });
 
     // 🔔 NOTIFICACIONES: Notificar a los asistentes interesados
