@@ -1,8 +1,9 @@
 // src/app/dashboard/organizador/proveedores/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import { Search, Filter, Mail, Phone, Briefcase, DollarSign, CheckCircle, XCircle, Truck, Camera, Video, Music, PenTool, Shield, Star, MessageSquare, Calendar } from 'lucide-react';
+import { Search, Filter, Mail, Phone, Briefcase, DollarSign, CheckCircle, XCircle, Truck, Camera, Video, Music, PenTool, Shield, Star, MessageSquare, Calendar, Flag } from 'lucide-react';
 import CustomDropdown from '@/components/CustomDropdown';
+import ReportModal from '@/components/ReportModal';
 
 interface Servicio {
   id: string;
@@ -44,6 +45,8 @@ export default function ProveedoresPage() {
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [eventos, setEventos] = useState<any[]>([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportData, setReportData] = useState<{ id: string, nombre: string, tipo: 'servicio' | 'usuario' } | null>(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -224,6 +227,16 @@ export default function ProveedoresPage() {
                   {proveedor.serviciosDisponibles} servicios disponibles
                 </p>
               </div>
+              <button
+                onClick={() => {
+                  setReportData({ id: proveedor.id, nombre: proveedor.nombre, tipo: 'usuario' });
+                  setShowReportModal(true);
+                }}
+                className="text-gray-500 hover:text-red-500 transition-colors p-2"
+                title="Reportar proveedor"
+              >
+                <Flag size={20} />
+              </button>
             </div>
 
             {/* Servicios Grid */}
@@ -238,11 +251,23 @@ export default function ProveedoresPage() {
                       <h4 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
                         {servicio.nombre}
                       </h4>
-                      {servicio.disponible ? (
-                        <CheckCircle size={16} className="text-green-500" />
-                      ) : (
-                        <XCircle size={16} className="text-gray-500" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setReportData({ id: servicio.id, nombre: servicio.nombre, tipo: 'servicio' });
+                            setShowReportModal(true);
+                          }}
+                          className="text-gray-500 hover:text-red-500 transition-colors"
+                          title="Reportar servicio"
+                        >
+                          <Flag size={16} />
+                        </button>
+                        {servicio.disponible ? (
+                          <CheckCircle size={16} className="text-green-500" />
+                        ) : (
+                          <XCircle size={16} className="text-gray-500" />
+                        )}
+                      </div>
                     </div>
 
                     <p className="text-gray-400 text-sm mb-4 line-clamp-2">
@@ -384,6 +409,15 @@ export default function ProveedoresPage() {
           </div>
         </div>
       )}
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        tipo={reportData?.tipo || 'servicio'}
+        entidadId={reportData?.id}
+        entidadNombre={reportData?.nombre}
+        reportanteId={JSON.parse(localStorage.getItem('user') || '{}').id}
+      />
     </div>
   );
 }

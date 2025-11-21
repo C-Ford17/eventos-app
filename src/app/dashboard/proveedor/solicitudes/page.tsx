@@ -1,13 +1,16 @@
 // src/app/dashboard/proveedor/solicitudes/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import { MessageSquare, Calendar, MapPin, DollarSign, CheckCircle, XCircle, Clock, Filter, User } from 'lucide-react';
+import { MessageSquare, Calendar, MapPin, DollarSign, CheckCircle, XCircle, Clock, Filter, User, Flag } from 'lucide-react';
 import CustomDropdown from '@/components/CustomDropdown';
+import ReportModal from '@/components/ReportModal';
 
 export default function SolicitudesPage() {
   const [solicitudes, setSolicitudes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState('pendiente');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportData, setReportData] = useState<{ id: string, nombre: string } | null>(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -145,6 +148,16 @@ export default function SolicitudesPage() {
                   <div className="flex items-center gap-2 text-gray-400 text-sm">
                     <User size={14} />
                     <span>Organizador: <span className="text-white font-medium">{solicitud.evento.organizador.nombre}</span></span>
+                    <button
+                      onClick={() => {
+                        setReportData({ id: solicitud.evento.organizador.id, nombre: solicitud.evento.organizador.nombre });
+                        setShowReportModal(true);
+                      }}
+                      className="text-gray-500 hover:text-red-500 transition-colors ml-2"
+                      title="Reportar organizador"
+                    >
+                      <Flag size={14} />
+                    </button>
                   </div>
                 </div>
 
@@ -227,6 +240,15 @@ export default function SolicitudesPage() {
           ))}
         </div>
       )}
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        tipo="usuario"
+        entidadId={reportData?.id}
+        entidadNombre={reportData?.nombre}
+        reportanteId={JSON.parse(localStorage.getItem('user') || '{}').id}
+      />
     </div>
   );
 }

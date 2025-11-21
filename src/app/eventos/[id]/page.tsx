@@ -3,8 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, MapPin, Users, Ticket, Clock, ArrowLeft, Share2, Heart, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Users, Ticket, Clock, ArrowLeft, Share2, Heart, TrendingUp, Flag } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
+import ReportModal from '@/components/ReportModal';
 
 export default function DetalleEventoPage() {
   const params = useParams();
@@ -15,6 +16,8 @@ export default function DetalleEventoPage() {
   const [user, setUser] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportType, setReportType] = useState<'evento' | 'usuario'>('evento');
   const shareButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -170,6 +173,16 @@ export default function DetalleEventoPage() {
                   <div className="flex items-center gap-2">
                     <Users size={18} className="text-blue-300" />
                     <span className="text-sm">{evento.organizador.nombre}</span>
+                    <button
+                      onClick={() => {
+                        setReportType('usuario');
+                        setShowReportModal(true);
+                      }}
+                      className="text-gray-400 hover:text-red-400 transition-colors ml-2"
+                      title="Reportar organizador"
+                    >
+                      <Flag size={14} />
+                    </button>
                   </div>
                   <div className="flex items-center gap-2">
                     <TrendingUp size={18} className="text-green-300" />
@@ -196,6 +209,17 @@ export default function DetalleEventoPage() {
                     evento={evento}
                   />
                 </div>
+
+                <button
+                  onClick={() => {
+                    setReportType('evento');
+                    setShowReportModal(true);
+                  }}
+                  className="p-3 bg-white/20 backdrop-blur-md border border-white/30 hover:bg-white/30 rounded-xl transition-all"
+                  aria-label="Reportar evento"
+                >
+                  <Flag size={20} className="text-white" />
+                </button>
 
                 {user && user.tipo_usuario === 'asistente' && (
                   <button
@@ -372,6 +396,15 @@ export default function DetalleEventoPage() {
           </div>
         </div>
       </div>
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        tipo={reportType}
+        entidadId={reportType === 'evento' ? evento.id : evento.organizador.id}
+        entidadNombre={reportType === 'evento' ? evento.nombre : evento.organizador.nombre}
+        reportanteId={user?.id}
+      />
     </div>
   );
 }
