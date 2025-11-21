@@ -30,6 +30,8 @@ export default function Sidebar() {
     const [user, setUser] = useState<any>(null);
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [tooltipPos, setTooltipPos] = useState(0);
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -110,7 +112,7 @@ export default function Sidebar() {
             >
                 <div className="flex flex-col h-full">
                     {/* Logo Area */}
-                    <div className="h-20 flex items-center px-6 border-b border-white/5">
+                    <div className={`h-20 flex items-center border-b border-white/5 transition-all ${isCollapsed ? 'justify-center px-2' : 'px-6'}`}>
                         <Link href="/" className="flex items-center gap-3 group">
                             <img
                                 src="/logo.svg"
@@ -136,23 +138,15 @@ export default function Sidebar() {
                     </div>
 
                     {/* Navigation */}
-                    <nav className={`flex-1 px-4 py-6 space-y-2 overflow-y-auto ${isCollapsed ? 'scrollbar-none' : 'custom-scrollbar'}`}>
-                        <style jsx>{`
-                            .scrollbar-none::-webkit-scrollbar {
-                                display: none;
-                            }
-                            .scrollbar-none {
-                                -ms-overflow-style: none;
-                                scrollbar-width: none;
-                            }
-                        `}</style>
+                    <nav className={`flex-1 py-6 space-y-2 overflow-y-auto ${isCollapsed ? 'scrollbar-none px-2' : 'custom-scrollbar px-4'}`}>
+
                         {!isCollapsed && (
                             <div className="px-2 mb-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 {user?.tipo_usuario || 'Menu'}
                             </div>
                         )}
 
-                        {sidebarOptions.map((option) => {
+                        {sidebarOptions.map((option, index) => {
                             const Icon = option.icon;
                             const isActive = pathname === option.href;
 
@@ -161,10 +155,18 @@ export default function Sidebar() {
                                     key={option.href}
                                     href={option.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
+                                    onMouseEnter={(e) => {
+                                        if (isCollapsed) {
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            setTooltipPos(rect.top);
+                                            setHoveredIndex(index);
+                                        }
+                                    }}
+                                    onMouseLeave={() => setHoveredIndex(null)}
                                     className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all group relative ${isActive
                                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
                                         : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                                        }`}
+                                        } ${isCollapsed ? 'justify-center' : ''}`}
                                 >
                                     <Icon size={20} className={isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'} />
 
@@ -173,9 +175,14 @@ export default function Sidebar() {
                                     )}
 
                                     {/* Tooltip for collapsed state */}
-                                    {isCollapsed && (
-                                        <div className="absolute left-full ml-4 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 border border-white/10">
+                                    {isCollapsed && hoveredIndex === index && (
+                                        <div
+                                            className="fixed left-20 px-3 py-2 bg-gray-800 text-white text-xs rounded-md shadow-xl border border-white/10 z-[100] whitespace-nowrap animate-in fade-in slide-in-from-left-2"
+                                            style={{ top: tooltipPos + 10 }}
+                                        >
                                             {option.label}
+                                            {/* Arrow */}
+                                            <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-gray-800" />
                                         </div>
                                     )}
                                 </Link>
@@ -184,7 +191,7 @@ export default function Sidebar() {
                     </nav>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-white/5 bg-black/20">
+                    <div className={`border-t border-white/5 bg-black/20 transition-all ${isCollapsed ? 'p-2' : 'p-4'}`}>
                         <Link
                             href="/dashboard/configuracion"
                             className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all ${isCollapsed ? 'justify-center' : ''}`}

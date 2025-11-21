@@ -13,17 +13,60 @@ export async function DELETE(req: Request) {
             );
         }
 
-        const result = await prisma.reserva.deleteMany({
+        // 1. Buscar las reservas rechazadas
+        const reservasRechazadas = await prisma.reserva.findMany({
             where: {
                 asistente_id: usuario_id,
                 estado_reserva: 'rechazada',
             },
+            select: { id: true }
         });
+
+        const idsReservas = reservasRechazadas.map(r => r.id);
+
+        if (idsReservas.length === 0) {
+            return NextResponse.json({
+                success: true,
+                message: 'No hay reservas rechazadas para eliminar',
+                count: 0,
+            });
+        }
+
+        // 2. Eliminar en orden respetando las restricciones (FK)
+        const result = await prisma.$transaction([
+            // Eliminar credenciales de acceso asociadas
+            prisma.credencialAcceso.deleteMany({
+                where: {
+                    reserva_id: { in: idsReservas }
+                }
+            }),
+            // Eliminar pagos asociados
+            prisma.pago.deleteMany({
+                where: {
+                    reserva_id: { in: idsReservas }
+                }
+            }),
+            // Eliminar reembolsos asociados (si existen)
+            prisma.reembolso.deleteMany({
+                where: {
+                    reserva_id: { in: idsReservas }
+                }
+            }),
+            // Finalmente eliminar las reservas
+            prisma.reserva.deleteMany({
+                where: {
+                    id: { in: idsReservas }
+                }
+            })
+        ]);
+
+        // El resultado de deleteMany es el último del array (la eliminación de reservas)
+        const deletedCount = result[3].count;
 
         return NextResponse.json({
             success: true,
-            message: `Se eliminaron ${result.count} reservas rechazadas`,
-            count: result.count,
+            message: `Se eliminaron ${deletedCount} reservas rechazadas`,
+            count: deletedCount,
         });
     } catch (error) {
         console.error('Error eliminando reservas:', error);
