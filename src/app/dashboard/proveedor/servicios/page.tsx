@@ -152,25 +152,41 @@ export default function MisServiciosPage() {
           {serviciosFiltrados.map((servicio) => (
             <div key={servicio.id} className="group bg-[#1a1a1a]/60 border border-white/10 rounded-2xl p-6 hover:border-blue-500/30 transition-all flex flex-col h-full">
               <div className="flex justify-between items-start mb-4">
-                <div>
+                <div className="flex-1">
                   <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
                     {servicio.nombre}
                   </h3>
-                  <span className="inline-block px-2 py-1 rounded-md bg-white/5 text-xs text-gray-400 border border-white/5">
-                    {servicio.categoria}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-block px-2 py-1 rounded-md bg-white/5 text-xs text-gray-400 border border-white/5">
+                      {servicio.categoria}
+                    </span>
+                    {servicio.bloqueado && (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium border bg-red-500/10 text-red-400 border-red-500/20">
+                        🚫 Bloqueado
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => handleCambiarDisponibilidad(servicio.id, servicio.disponibilidad)}
+                  disabled={servicio.bloqueado}
                   className={`p-2 rounded-lg transition-colors ${servicio.disponibilidad
                     ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
                     : 'bg-gray-500/10 text-gray-400 hover:bg-gray-500/20'
-                    }`}
-                  title={servicio.disponibilidad ? 'Marcar como no disponible' : 'Marcar como disponible'}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title={servicio.bloqueado ? 'Servicio bloqueado' : servicio.disponibilidad ? 'Marcar como no disponible' : 'Marcar como disponible'}
                 >
                   {servicio.disponibilidad ? <Eye size={20} /> : <EyeOff size={20} />}
                 </button>
               </div>
+
+              {servicio.bloqueado && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-red-400 text-sm">
+                    ⚠️ Este servicio ha sido bloqueado por el administrador. No es visible para los organizadores. Contacta al soporte para más información.
+                  </p>
+                </div>
+              )}
 
               <p className="text-gray-400 text-sm mb-6 line-clamp-3 flex-1">
                 {servicio.descripcion}

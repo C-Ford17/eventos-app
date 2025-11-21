@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { createAuditLog } from '@/lib/audit';
 
 export async function POST(req: Request) {
   try {
@@ -38,6 +39,32 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
+
+    // Verifica si el usuario está bloqueado
+    if (user.bloqueado) {
+      // Registrar intento de login bloqueado
+      await createAuditLog({
+        usuario_id: user.id,
+        accion: 'intento_login_bloqueado',
+        tabla: 'usuarios',
+        registro_id: user.id,
+        detalles: `Usuario bloqueado intentó iniciar sesión: ${email}`,
+      });
+
+      return NextResponse.json(
+        { error: 'Tu cuenta ha sido bloqueada. Contacta al administrador para más información.' },
+        { status: 403 }
+      );
+    }
+
+    // Registrar login exitoso
+    await createAuditLog({
+      usuario_id: user.id,
+      accion: 'login_exitoso',
+      tabla: 'usuarios',
+      registro_id: user.id,
+      detalles: `Login exitoso desde ${email}`,
+    });
 
     // Login exitoso - devuelve datos del usuario (sin contraseña)
     return NextResponse.json(

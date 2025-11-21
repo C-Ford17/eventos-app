@@ -171,11 +171,24 @@ export default function MisEventosPage() {
                     >
                       {evento.estado.charAt(0).toUpperCase() + evento.estado.slice(1)}
                     </span>
+                    {evento.bloqueado && (
+                      <span className="px-3 py-1 rounded-full text-xs font-medium border bg-red-500/10 text-red-400 border-red-500/20">
+                        🚫 Bloqueado
+                      </span>
+                    )}
                     <span className="text-gray-500 text-sm flex items-center gap-1">
                       <Calendar size={14} />
                       {new Date(evento.fecha_inicio).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </span>
                   </div>
+
+                  {evento.bloqueado && (
+                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <p className="text-red-400 text-sm">
+                        ⚠️ Este evento ha sido bloqueado por el administrador. No es visible para los usuarios. Contacta al soporte para más información.
+                      </p>
+                    </div>
+                  )}
 
                   <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors truncate">
                     {evento.nombre}

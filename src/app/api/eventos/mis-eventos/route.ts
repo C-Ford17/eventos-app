@@ -47,8 +47,8 @@ export async function GET(req: Request) {
       );
 
       const disponibilidad = evento.aforo_max - totalReservas;
-      const porcentajeOcupacion = evento.aforo_max > 0 
-        ? Math.round((totalReservas / evento.aforo_max) * 100) 
+      const porcentajeOcupacion = evento.aforo_max > 0
+        ? Math.round((totalReservas / evento.aforo_max) * 100)
         : 0;
 
       return {
@@ -59,6 +59,8 @@ export async function GET(req: Request) {
         fecha_fin: evento.fecha_fin,
         ubicacion: evento.ubicacion,
         aforo_max: evento.aforo_max,
+        imagen_url: evento.imagen_url,
+        bloqueado: evento.bloqueado,
         categoria: evento.categoria.nombre,
         categoria_id: evento.categoria_id,
         organizador: evento.organizador.nombre,

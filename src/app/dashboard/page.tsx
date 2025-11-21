@@ -27,7 +27,7 @@ export default function DashboardPage() {
       const tipoUsuario = user.tipo_usuario;
 
       // Redirige según el tipo de usuario
-      switch(tipoUsuario) {
+      switch (tipoUsuario) {
         case 'organizador':
           console.log('Redirigiendo a organizador'); // Debug
           router.push('/dashboard/organizador');
@@ -41,8 +41,12 @@ export default function DashboardPage() {
           router.push('/dashboard/asistente');
           break;
         case 'staff':
-          console.log('Redirigiendo a asistente'); // Debug
+          console.log('Redirigiendo a staff'); // Debug
           router.push('/dashboard/staff');
+          break;
+        case 'admin':
+          console.log('Redirigiendo a admin'); // Debug
+          router.push('/dashboard/admin');
           break;
         default:
           console.error('Tipo de usuario desconocido:', tipoUsuario);

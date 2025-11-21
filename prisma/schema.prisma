@@ -19,6 +19,7 @@ model Usuario {
   updatedAt          DateTime           @updatedAt @map("updated_at")
   telefono           String? // ✅ AGREGAR ESTA LÍNEA (opcional)
   foto_perfil_url    String?
+  bloqueado          Boolean  @default(false) // Para bloquear usuarios
   preferencias_notificacion Json?   @map("preferencias_notificacion") // Preferencias de notificación
   
   // Mercado Pago Connect
@@ -64,6 +65,7 @@ model Evento {
   categoria_id   String
   organizador_id String
   estado         String   @default("programado")
+  bloqueado      Boolean  @default(false) // Para bloquear eventos
   imagen_url     String? // <--- AGREGA ESTA LÍNEA
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -164,6 +166,8 @@ model ProductoServicio {
   categoria      String
   precio_base    Decimal  @db.Decimal(10, 2)
   disponibilidad Boolean  @default(true)
+  bloqueado      Boolean  @default(false) // Para bloquear servicios
+  imagen_url     String? // URL de la imagen del servicio
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
