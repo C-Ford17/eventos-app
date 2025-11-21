@@ -16,7 +16,8 @@ import {
     ScanLine,
     ChevronLeft,
     ChevronRight,
-    Settings
+    Settings,
+    ShieldAlert
 } from 'lucide-react';
 let toggleMobileSidebarFn: (() => void) | null = null;
 export function toggleMobileSidebar() {
@@ -82,6 +83,15 @@ export default function Sidebar() {
                     { label: 'Escanear', href: '/dashboard/staff/escanear', icon: ScanLine },
                     { label: 'Asistentes', href: '/dashboard/staff/asistentes', icon: Users },
                     { label: 'Reportes', href: '/dashboard/staff/reportes', icon: FileText },
+                ];
+            case 'admin':
+                return [
+                    ...commonOptions,
+                    { label: 'Usuarios', href: '/dashboard/admin/usuarios', icon: Users },
+                    { label: 'Eventos', href: '/dashboard/admin/eventos', icon: Calendar },
+                    { label: 'Servicios', href: '/dashboard/admin/servicios', icon: Briefcase },
+                    { label: 'Reportes', href: '/dashboard/admin/reportes', icon: FileText },
+                    { label: 'Auditoría', href: '/dashboard/admin/auditoria', icon: ShieldAlert },
                 ];
             default:
                 return commonOptions;

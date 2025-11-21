@@ -17,6 +17,8 @@ export async function GET(req: Request) {
         ...(proveedor_id && { proveedor_id }),
         ...(categoria && { categoria }),
         ...(disponible === 'true' && { disponibilidad: true }),
+        // Solo excluir bloqueados si NO es el proveedor consultando sus propios servicios
+        ...(!proveedor_id && { bloqueado: false }),
       },
       include: {
         proveedor: {
