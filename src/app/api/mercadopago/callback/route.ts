@@ -9,11 +9,11 @@ export async function GET(req: Request) {
     const error = searchParams.get('error');
 
     if (error) {
-        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/organizador/perfil?error=${error}`);
+        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/configuracion?error=${error}`);
     }
 
     if (!code || !state) {
-        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/organizador/perfil?error=missing_params`);
+        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/configuracion?error=missing_params`);
     }
 
     const userId = state;
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 
         if (!tokenResponse.ok) {
             console.error('Error exchanging token:', data);
-            return NextResponse.redirect(`${process.env.APP_URL}/dashboard/organizador/perfil?error=token_exchange_failed`);
+            return NextResponse.redirect(`${process.env.APP_URL}/dashboard/configuracion?error=token_exchange_failed`);
         }
 
         // Save tokens to user (Encrypted)
@@ -52,9 +52,9 @@ export async function GET(req: Request) {
             },
         });
 
-        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/organizador/perfil?success=connected`);
+        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/configuracion?success=connected`);
     } catch (err) {
         console.error('Error in MP callback:', err);
-        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/organizador/perfil?error=internal_error`);
+        return NextResponse.redirect(`${process.env.APP_URL}/dashboard/configuracion?error=internal_error`);
     }
 }
