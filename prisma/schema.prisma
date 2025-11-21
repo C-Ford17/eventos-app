@@ -20,6 +20,13 @@ model Usuario {
   telefono           String? // ✅ AGREGAR ESTA LÍNEA (opcional)
   foto_perfil_url    String?
   preferencias_notificacion Json?   @map("preferencias_notificacion") // Preferencias de notificación
+  
+  // Mercado Pago Connect
+  mp_access_token    String?
+  mp_public_key      String?
+  mp_refresh_token   String?
+  mp_user_id         String?
+  mp_expires_in      Int?
   eventosCreados     Evento[]           @relation("OrganizadorEventos")
   reservas           Reserva[]          @relation("AsistenteReservas")
   productosServicios ProductoServicio[] @relation("ProveedorServicios")
