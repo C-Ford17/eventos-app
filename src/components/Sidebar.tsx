@@ -17,8 +17,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Settings,
-    ShieldAlert
+    ShieldAlert,
+    Flag
 } from 'lucide-react';
+import ReportModal from '@/components/ReportModal';
 let toggleMobileSidebarFn: (() => void) | null = null;
 export function toggleMobileSidebar() {
     if (toggleMobileSidebarFn) {
@@ -33,6 +35,7 @@ export default function Sidebar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [tooltipPos, setTooltipPos] = useState(0);
+    const [showBugModal, setShowBugModal] = useState(false);
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -201,7 +204,15 @@ export default function Sidebar() {
                     </nav>
 
                     {/* Footer */}
-                    <div className={`border-t border-white/5 bg-black/20 transition-all ${isCollapsed ? 'p-2' : 'p-4'}`}>
+                    <div className={`border-t border-white/5 bg-black/20 transition-all ${isCollapsed ? 'p-2' : 'p-4'} space-y-1`}>
+                        <button
+                            onClick={() => setShowBugModal(true)}
+                            className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-red-400 transition-all ${isCollapsed ? 'justify-center' : ''}`}
+                            title={isCollapsed ? "Reportar Problema" : ""}
+                        >
+                            <Flag size={20} />
+                            {!isCollapsed && <span className="font-medium text-sm">Reportar Problema</span>}
+                        </button>
                         <Link
                             href="/dashboard/configuracion"
                             className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all ${isCollapsed ? 'justify-center' : ''}`}
@@ -212,6 +223,13 @@ export default function Sidebar() {
                     </div>
                 </div>
             </aside>
+
+            <ReportModal
+                isOpen={showBugModal}
+                onClose={() => setShowBugModal(false)}
+                tipo="bug"
+                reportanteId={user?.id}
+            />
         </>
     );
 }
