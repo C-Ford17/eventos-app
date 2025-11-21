@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, MapPin, Users, Ticket, Clock, ArrowLeft, Share2, Heart, TrendingUp, Check } from 'lucide-react';
+import { Calendar, MapPin, Users, Ticket, Clock, ArrowLeft, Share2, Heart, TrendingUp } from 'lucide-react';
 import ShareMenu from '@/components/ShareMenu';
 
 export default function DetalleEventoPage() {
@@ -14,7 +14,6 @@ export default function DetalleEventoPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -92,34 +91,6 @@ export default function DetalleEventoPage() {
     }
   };
 
-  const copyToClipboard = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-        setShowShareMenu(false);
-      }, 2000);
-    });
-  };
-
-  const shareToWhatsApp = () => {
-    const url = window.location.href;
-    const text = `¡Mira este evento! ${evento?.nombre}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
-  };
-
-  const shareToFacebook = () => {
-    const url = window.location.href;
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-  };
-
-  const shareToTwitter = () => {
-    const url = window.location.href;
-    const text = `¡Mira este evento! ${evento?.nombre}`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -157,14 +128,24 @@ export default function DetalleEventoPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Hero Section with Gradient */}
-      <div className="relative h-[500px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 overflow-hidden">
-        {/* Animated gradient orbs */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      {/* Hero Section with Blur Effect */}
+      <div className="relative h-[500px] overflow-hidden">
+        {/* Background Image with Blur */}
+        {evento.imagen_url ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-xl scale-110 opacity-50"
+            style={{ backgroundImage: `url(${evento.imagen_url})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-black opacity-50" />
+        )}
 
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-[#0a0a0a]/40" />
+        <div className="absolute inset-0 bg-black/60" />
+
+        {/* Animated gradient orbs */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
 
         {/* Content */}
         <div className="relative h-full flex items-end">

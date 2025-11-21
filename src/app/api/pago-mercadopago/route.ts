@@ -1,5 +1,6 @@
 // /src/app/api/pago-mercadopago/route.ts
 import { NextResponse } from 'next/server';
+import { decrypt } from '@/lib/encryption';
 
 export async function POST(req: Request) {
   const { eventoId, descripcion, monto, referencia, email } = await req.json();
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   }
 
   const organizador = evento.organizador;
-  const sellerAccessToken = organizador.mp_access_token;
+  const sellerAccessToken = organizador.mp_access_token ? decrypt(organizador.mp_access_token) : null;
   const appUrl = process.env.APP_URL;
 
   // 2. Determinar token y configuración

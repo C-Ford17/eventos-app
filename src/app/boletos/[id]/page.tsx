@@ -22,17 +22,19 @@ export default function BoletaQRPage() {
         if (data.success) {
           setReserva(data.reserva);
 
-          // Generar QR desde el ID de la reserva
-          QRCode.toDataURL(data.reserva.id, {
-            width: 300,
-            margin: 2,
-            color: {
-              dark: '#000000',
-              light: '#FFFFFF',
-            },
-          }).then(url => {
-            setQrDataURL(url);
-          });
+          // Generar QR solo si está confirmada
+          if (data.reserva.estado_reserva === 'confirmada') {
+            QRCode.toDataURL(data.reserva.id, {
+              width: 300,
+              margin: 2,
+              color: {
+                dark: '#000000',
+                light: '#FFFFFF',
+              },
+            }).then(url => {
+              setQrDataURL(url);
+            });
+          }
         }
       })
       .catch(err => console.error('Error:', err))
@@ -105,7 +107,10 @@ export default function BoletaQRPage() {
 
         <div className="bg-[#1a1a1a]/60 border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative">
           {/* Top Decoration */}
-          <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+          <div className={`h-2 bg-gradient-to-r ${reserva.estado_reserva === 'confirmada' ? 'from-blue-500 via-purple-500 to-pink-500' :
+              reserva.estado_reserva === 'pendiente' ? 'from-yellow-500 to-orange-500' :
+                'from-red-500 to-red-700'
+            }`} />
 
           <div className="p-8">
             <div className="text-center mb-6">
@@ -129,22 +134,50 @@ export default function BoletaQRPage() {
               </div>
             </div>
 
-            {/* QR Code Container */}
-            <div className="bg-white p-4 rounded-2xl mb-8 shadow-lg mx-auto max-w-[280px]">
-              {qrDataURL ? (
-                <div className="text-center">
-                  <img
-                    src={qrDataURL}
-                    alt="Código QR"
-                    className="w-full h-auto mb-2"
-                  />
-                  <p className="text-gray-900 font-mono text-xs font-bold tracking-wider break-all">
-                    {reserva.id}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64">
+            {/* QR Code Container or Status Message */}
+            <div className="bg-white p-4 rounded-2xl mb-8 shadow-lg mx-auto max-w-[280px] min-h-[280px] flex items-center justify-center">
+              {reserva.estado_reserva === 'confirmada' ? (
+                qrDataURL ? (
+                  <div className="text-center w-full">
+                    <img
+                      src={qrDataURL}
+                      alt="Código QR"
+                      className="w-full h-auto mb-2"
+                    />
+                    <p className="text-gray-900 font-mono text-xs font-bold tracking-wider break-all">
+                      {reserva.id}
+                    </p>
+                  </div>
+                ) : (
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                )
+              ) : (
+                <div className="text-center p-4">
+                  {reserva.estado_reserva === 'pendiente' ? (
+                    <>
+                      <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-900 font-bold text-lg mb-2">Pago Pendiente</p>
+                      <p className="text-gray-600 text-sm">
+                        Tu reserva está pendiente de pago. El código QR se generará una vez confirmado el pago.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-900 font-bold text-lg mb-2">Reserva Cancelada</p>
+                      <p className="text-gray-600 text-sm">
+                        Esta reserva ha sido cancelada o expiró. Por favor realiza una nueva compra.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>

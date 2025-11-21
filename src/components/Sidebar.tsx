@@ -136,7 +136,16 @@ export default function Sidebar() {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+                    <nav className={`flex-1 px-4 py-6 space-y-2 overflow-y-auto ${isCollapsed ? 'scrollbar-none' : 'custom-scrollbar'}`}>
+                        <style jsx>{`
+                            .scrollbar-none::-webkit-scrollbar {
+                                display: none;
+                            }
+                            .scrollbar-none {
+                                -ms-overflow-style: none;
+                                scrollbar-width: none;
+                            }
+                        `}</style>
                         {!isCollapsed && (
                             <div className="px-2 mb-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 {user?.tipo_usuario || 'Menu'}

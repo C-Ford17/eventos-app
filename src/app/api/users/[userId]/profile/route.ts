@@ -35,7 +35,11 @@ export async function GET(
 
         return NextResponse.json({
             success: true,
-            user: usuario,
+            user: {
+                ...usuario,
+                mp_access_token: undefined, // Don't send the token
+                is_mp_connected: !!usuario.mp_access_token, // Send boolean flag
+            },
         });
     } catch (error: any) {
         console.error('Error obteniendo perfil:', error);
