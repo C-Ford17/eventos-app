@@ -61,7 +61,7 @@ export default function AsistentePanel() {
       {/* Cards de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link
-          href="/dashboard/asistente/boletos"
+          href="/dashboard/asistente/reservas"
           className="group bg-[#121212] border border-white/10 p-6 rounded-2xl hover:bg-white/5 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16 transition-all group-hover:bg-blue-500/20"></div>
@@ -98,13 +98,13 @@ export default function AsistentePanel() {
       </div>
 
       {/* Próximos eventos */}
-      <section className="bg-[#121212] border border-white/10 p-6 rounded-2xl shadow-xl">
+      <section className="bg-[#121212] border border-white/10 p-6 rounded-2xl shadow-xl overflow-hidden">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Calendar className="text-blue-500" size={20} />
             Próximos Eventos
           </h2>
-          <Link href="/dashboard/asistente/boletos" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+          <Link href="/dashboard/asistente/reservas" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
             Ver todos <ArrowRight size={14} />
           </Link>
         </div>
@@ -127,7 +127,7 @@ export default function AsistentePanel() {
           <div className="space-y-4">
             {proximosEventos.map((reserva) => (
               <div key={reserva.id} className="group bg-white/5 border border-white/5 p-4 rounded-xl hover:bg-white/10 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-4 min-w-0">
+                <div className="flex items-start gap-4 min-w-0 w-full">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex flex-col items-center justify-center text-blue-400 shrink-0">
                     <span className="text-xs font-bold uppercase">{new Date(reserva.evento.fecha_inicio).toLocaleDateString('es-ES', { month: 'short' })}</span>
                     <span className="text-lg font-bold leading-none">{new Date(reserva.evento.fecha_inicio).getDate()}</span>
@@ -137,7 +137,7 @@ export default function AsistentePanel() {
                       {reserva.evento.nombre}
                     </h3>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm text-gray-400">
-                      <span className="flex items-center gap-1 min-w-0">
+                      <span className="flex items-center gap-1 min-w-0 max-w-[150px] sm:max-w-none">
                         <MapPin size={12} className="shrink-0" />
                         <span className="truncate">{reserva.evento.ubicacion}</span>
                       </span>
@@ -150,7 +150,7 @@ export default function AsistentePanel() {
                 </div>
                 <Link
                   href={`/boletos/${reserva.id}`}
-                  className="w-full sm:w-auto px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors text-center whitespace-nowrap"
+                  className="w-full sm:w-auto px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors text-center whitespace-nowrap shrink-0"
                 >
                   Ver boleto
                 </Link>
