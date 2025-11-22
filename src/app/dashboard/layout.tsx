@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { Search, User, Menu, LogOut } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import Sidebar, { toggleMobileSidebar } from '@/components/Sidebar';
-import ChatWidget from '@/components/ChatWidget';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardLayout({
@@ -42,9 +41,6 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <Sidebar />
-
-      {/* Chat Widget - Only show for logged in users */}
-      {user && <ChatWidget />}
 
       {/* Main content */}
       <main className="flex-1 md:ml-20 lg:ml-72 p-4 md:p-8 transition-all duration-300 relative z-10">

@@ -4,13 +4,42 @@ import { prisma } from '@/lib/prisma';
 // GET - Obtener conversaciones para admin
 export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const last_updated = searchParams.get('last_updated');
+
+        const whereCondition = {
+            OR: [
+                { requiere_humano: true },
+                { estado: 'humano' }
+            ]
+        };
+
+        // Optimización: Verificar si hubo cambios antes de cargar todo
+        if (last_updated) {
+            const ultimaConversacion = await prisma.conversacion.findFirst({
+                where: whereCondition,
+                orderBy: { updatedAt: 'desc' },
+                select: { updatedAt: true }
+            });
+
+            if (!ultimaConversacion) {
+                // Si no hay conversaciones activas y el cliente tenía datos,
+                // enviamos lista vacía para que limpie.
+                // Si el cliente ya tenía vacío (last_updated muy antiguo o null), igual enviamos vacío.
+                return NextResponse.json({ success: true, conversaciones: [] });
+            }
+
+            const lastUpdatedDate = new Date(last_updated).getTime();
+            const currentUpdatedDate = new Date(ultimaConversacion.updatedAt).getTime();
+
+            if (currentUpdatedDate <= lastUpdatedDate) {
+                return NextResponse.json({ success: true, modified: false });
+            }
+        }
+
+        // Carga completa si hay cambios o es la primera vez
         const conversaciones = await prisma.conversacion.findMany({
-            where: {
-                OR: [
-                    { requiere_humano: true },
-                    { estado: 'humano' }
-                ]
-            },
+            where: whereCondition,
             include: {
                 usuario: {
                     select: {
@@ -38,7 +67,7 @@ export async function GET(req: Request) {
             orderBy: { updatedAt: 'desc' }
         });
 
-        return NextResponse.json({ success: true, conversaciones });
+        return NextResponse.json({ success: true, conversaciones, modified: true });
     } catch (error: any) {
         console.error('Error obteniendo conversaciones:', error);
         return NextResponse.json(

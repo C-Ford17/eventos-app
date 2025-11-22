@@ -23,9 +23,9 @@ export default function AyudaPage() {
                         <MessageCircle className="text-green-400 mb-4" size={32} />
                         <h3 className="text-xl font-semibold mb-2">Chat de Soporte</h3>
                         <p className="text-gray-400 mb-4">Habla con nuestro equipo de soporte en tiempo real.</p>
-                        <button className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
-                            Iniciar Chat
-                        </button>
+                        <Link href="/dashboard/ayuda" className="inline-block px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors">
+                            Ir al Chat
+                        </Link>
                     </div>
 
                     <div className="bg-white/5 p-6 rounded-2xl border border-white/10 hover:border-blue-500/30 transition-all">
