@@ -1,6 +1,7 @@
 // src/app/api/servicios/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createAuditLog } from '@/lib/audit';
 
 const prisma = new PrismaClient();
 
@@ -109,6 +110,15 @@ export async function POST(req: Request) {
           },
         },
       },
+    });
+
+    // Registrar en auditoría
+    await createAuditLog({
+      usuario_id: proveedor_id,
+      accion: 'crear_servicio',
+      tabla: 'productos_servicios',
+      registro_id: servicio.id,
+      detalles: `Servicio creado: ${servicio.nombre}`,
     });
 
     return NextResponse.json(

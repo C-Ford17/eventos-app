@@ -1,6 +1,7 @@
 // src/app/api/servicios/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createAuditLog } from '@/lib/audit';
 
 const prisma = new PrismaClient();
 
@@ -104,6 +105,15 @@ export async function PUT(
         ...(disponibilidad !== undefined && { disponibilidad }),
         ...(imagen_url !== undefined && { imagen_url }),
       },
+    });
+
+    // Registrar en auditoría
+    await createAuditLog({
+      usuario_id: proveedor_id || servicioExistente.proveedor_id,
+      accion: 'actualizar_servicio',
+      tabla: 'productos_servicios',
+      registro_id: id,
+      detalles: `Servicio actualizado: ${servicioActualizado.nombre}`,
     });
 
     return NextResponse.json({

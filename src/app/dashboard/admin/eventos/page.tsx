@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Search, MapPin, Users, DollarSign, Ban, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function AdminEventsPage() {
     const [events, setEvents] = useState<any[]>([]);
@@ -29,9 +30,15 @@ export default function AdminEventsPage() {
 
     const handleEventAction = async (eventId: string, action: 'block' | 'unblock') => {
         try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+
             const res = await fetch('/api/admin/events', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': user?.id || 'admin'
+                },
                 body: JSON.stringify({ eventId, action }),
             });
             const data = await res.json();
@@ -78,17 +85,20 @@ export default function AdminEventsPage() {
                         className="w-full pl-12 pr-4 py-3 bg-[#121212] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
                     />
                 </div>
-                <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-4 py-3 bg-[#121212] border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
-                >
-                    <option value="all">Todos los estados</option>
-                    <option value="programado">Programado</option>
-                    <option value="en_curso">En Curso</option>
-                    <option value="finalizado">Finalizado</option>
-                    <option value="cancelado">Cancelado</option>
-                </select>
+                <div className="w-full md:w-64">
+                    <CustomDropdown
+                        options={[
+                            { value: 'all', label: 'Todos los estados' },
+                            { value: 'programado', label: 'Programado' },
+                            { value: 'en_curso', label: 'En Curso' },
+                            { value: 'finalizado', label: 'Finalizado' },
+                            { value: 'cancelado', label: 'Cancelado' },
+                        ]}
+                        value={filterStatus}
+                        onChange={setFilterStatus}
+                        placeholder="Filtrar por estado"
+                    />
+                </div>
             </div>
 
             {/* Events Grid */}
