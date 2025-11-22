@@ -18,7 +18,9 @@ import {
     ChevronRight,
     Settings,
     ShieldAlert,
-    Flag
+    Flag,
+    MessageCircle,
+    HelpCircle
 } from 'lucide-react';
 import ReportModal from '@/components/ReportModal';
 let toggleMobileSidebarFn: (() => void) | null = null;
@@ -62,6 +64,7 @@ export default function Sidebar() {
                 return [
                     ...commonOptions,
                     { label: 'Mis Reservas', href: '/dashboard/asistente/reservas', icon: Ticket },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'organizador':
                 return [
@@ -71,6 +74,7 @@ export default function Sidebar() {
                     { label: 'Analíticas', href: '/dashboard/organizador/analiticas', icon: BarChart3 },
                     { label: 'Proveedores', href: '/dashboard/organizador/proveedores', icon: Users },
                     { label: 'Servicios', href: '/dashboard/organizador/servicios-contratados', icon: Briefcase },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'proveedor':
                 return [
@@ -79,6 +83,7 @@ export default function Sidebar() {
                     { label: 'Agregar Servicio', href: '/dashboard/proveedor/servicios/crear', icon: PlusCircle },
                     { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes', icon: FileText },
                     { label: 'Historial', href: '/dashboard/proveedor/historial', icon: History },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'staff':
                 return [
@@ -86,6 +91,7 @@ export default function Sidebar() {
                     { label: 'Escanear', href: '/dashboard/staff/escanear', icon: ScanLine },
                     { label: 'Asistentes', href: '/dashboard/staff/asistentes', icon: Users },
                     { label: 'Reportes', href: '/dashboard/staff/reportes', icon: FileText },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'admin':
                 return [
@@ -93,6 +99,7 @@ export default function Sidebar() {
                     { label: 'Usuarios', href: '/dashboard/admin/usuarios', icon: Users },
                     { label: 'Eventos', href: '/dashboard/admin/eventos', icon: Calendar },
                     { label: 'Servicios', href: '/dashboard/admin/servicios', icon: Briefcase },
+                    { label: 'Chat', href: '/dashboard/admin/chat', icon: MessageCircle },
                     { label: 'Reportes', href: '/dashboard/admin/reportes', icon: FileText },
                     { label: 'Auditoría', href: '/dashboard/admin/auditoria', icon: ShieldAlert },
                 ];
