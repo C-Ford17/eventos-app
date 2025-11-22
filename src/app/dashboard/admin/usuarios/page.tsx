@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Users, Search, Shield, Ban, CheckCircle, Filter } from 'lucide-react';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -28,9 +29,15 @@ export default function AdminUsersPage() {
 
     const handleUserAction = async (userId: string, action: 'block' | 'unblock') => {
         try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+
             const res = await fetch('/api/admin/users', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': user?.id || 'admin'
+                },
                 body: JSON.stringify({ userId, action }),
             });
             const data = await res.json();
@@ -79,18 +86,21 @@ export default function AdminUsersPage() {
                         className="w-full pl-12 pr-4 py-3 bg-[#121212] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
                     />
                 </div>
-                <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    className="px-4 py-3 bg-[#121212] border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
-                >
-                    <option value="all">Todos los roles</option>
-                    <option value="asistente">Asistente</option>
-                    <option value="organizador">Organizador</option>
-                    <option value="proveedor">Proveedor</option>
-                    <option value="staff">Staff</option>
-                    <option value="admin">Admin</option>
-                </select>
+                <div className="w-full md:w-64">
+                    <CustomDropdown
+                        options={[
+                            { value: 'all', label: 'Todos los roles' },
+                            { value: 'asistente', label: 'Asistente' },
+                            { value: 'organizador', label: 'Organizador' },
+                            { value: 'proveedor', label: 'Proveedor' },
+                            { value: 'staff', label: 'Staff' },
+                            { value: 'admin', label: 'Admin' },
+                        ]}
+                        value={filterRole}
+                        onChange={setFilterRole}
+                        placeholder="Filtrar por rol"
+                    />
+                </div>
             </div>
 
             {/* Users Table */}

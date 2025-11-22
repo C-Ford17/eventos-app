@@ -1,6 +1,7 @@
 // src/app/api/eventos/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { createAuditLog } from '@/lib/audit';
 
 const prisma = new PrismaClient();
 
@@ -173,6 +174,15 @@ export async function PUT(
       }
 
       return evento;
+    });
+
+    // Registrar en auditoría
+    await createAuditLog({
+      usuario_id: organizador_id || eventoExistente.organizador_id,
+      accion: 'actualizar_evento',
+      tabla: 'eventos',
+      registro_id: id,
+      detalles: `Evento actualizado: ${eventoActualizado.nombre}`,
     });
 
     // Obtener evento actualizado con relaciones para devolver

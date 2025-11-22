@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Briefcase, Search, DollarSign, Tag, User, Ban, CheckCircle } from 'lucide-react';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function AdminServicesPage() {
     const [services, setServices] = useState<any[]>([]);
@@ -28,9 +29,15 @@ export default function AdminServicesPage() {
 
     const handleServiceAction = async (serviceId: string, action: 'block' | 'unblock') => {
         try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+
             const res = await fetch('/api/admin/services', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': user?.id || 'admin'
+                },
                 body: JSON.stringify({ serviceId, action }),
             });
             const data = await res.json();
@@ -85,25 +92,28 @@ export default function AdminServicesPage() {
                         className="w-full pl-12 pr-4 py-3 bg-[#121212] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500"
                     />
                 </div>
-                <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="px-4 py-3 bg-[#121212] border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500"
-                >
-                    <option value="all">Todas las categorías</option>
-                    <option value="Catering">Catering</option>
-                    <option value="Audio">Audio</option>
-                    <option value="Iluminación">Iluminación</option>
-                    <option value="Fotografía">Fotografía</option>
-                    <option value="Video">Video</option>
-                    <option value="Decoración">Decoración</option>
-                    <option value="Seguridad">Seguridad</option>
-                    <option value="Transporte">Transporte</option>
-                    <option value="Animación">Animación</option>
-                    <option value="Tecnología">Tecnología</option>
-                    <option value="Mobiliario">Mobiliario</option>
-                    <option value="Otro">Otro</option>
-                </select>
+                <div className="w-full md:w-64">
+                    <CustomDropdown
+                        options={[
+                            { value: 'all', label: 'Todas las categorías' },
+                            { value: 'Catering', label: 'Catering' },
+                            { value: 'Audio', label: 'Audio' },
+                            { value: 'Iluminación', label: 'Iluminación' },
+                            { value: 'Fotografía', label: 'Fotografía' },
+                            { value: 'Video', label: 'Video' },
+                            { value: 'Decoración', label: 'Decoración' },
+                            { value: 'Seguridad', label: 'Seguridad' },
+                            { value: 'Transporte', label: 'Transporte' },
+                            { value: 'Animación', label: 'Animación' },
+                            { value: 'Tecnología', label: 'Tecnología' },
+                            { value: 'Mobiliario', label: 'Mobiliario' },
+                            { value: 'Otro', label: 'Otro' },
+                        ]}
+                        value={filterCategory}
+                        onChange={setFilterCategory}
+                        placeholder="Filtrar por categoría"
+                    />
+                </div>
             </div>
 
             {/* Services Grid */}
