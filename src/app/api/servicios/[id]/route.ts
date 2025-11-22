@@ -71,6 +71,7 @@ export async function PUT(
       precio_base,
       disponibilidad,
       proveedor_id,
+      imagen_url,
     } = body;
 
     // Verifica que existe
@@ -101,6 +102,7 @@ export async function PUT(
         ...(categoria && { categoria }),
         ...(precio_base && { precio_base: parseFloat(precio_base) }),
         ...(disponibilidad !== undefined && { disponibilidad }),
+        ...(imagen_url !== undefined && { imagen_url }),
       },
     });
 

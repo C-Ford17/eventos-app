@@ -68,6 +68,7 @@ export async function POST(req: Request) {
       categoria,
       precio_base,
       disponibilidad = true,
+      imagen_url,
     } = body;
 
     // Validaciones
@@ -98,6 +99,7 @@ export async function POST(req: Request) {
         categoria,
         precio_base: parseFloat(precio_base),
         disponibilidad,
+        imagen_url,
       },
       include: {
         proveedor: {

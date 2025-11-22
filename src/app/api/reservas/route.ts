@@ -12,19 +12,22 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const usuario_id = searchParams.get('usuario_id');
     const estado = searchParams.get('estado');
+    const evento_id = searchParams.get('evento_id');
 
-    if (!usuario_id) {
+    if (!usuario_id && !evento_id) {
       return NextResponse.json(
-        { error: 'usuario_id es requerido' },
+        { error: 'usuario_id o evento_id es requerido' },
         { status: 400 }
       );
     }
 
+    const whereClause: any = {};
+    if (usuario_id) whereClause.asistente_id = usuario_id;
+    if (evento_id) whereClause.evento_id = evento_id;
+    if (estado) whereClause.estado_reserva = estado;
+
     const reservas = await prisma.reserva.findMany({
-      where: {
-        asistente_id: usuario_id,
-        ...(estado && { estado_reserva: estado }),
-      },
+      where: whereClause,
       include: {
         evento: {
           include: {
@@ -78,8 +81,8 @@ export async function POST(req: Request) {
       tipo_entrada_id, // <-- NUEVO CAMPO
     } = body;
 
-    // Validaciones - AHORA INCLUYE tipo_entrada_id
-    if (!evento_id || !usuario_id || !cantidad_boletos || !metodo_pago || !total || !tipo_entrada_id) {
+    // Validaciones - Permitir total = 0 para eventos gratis
+    if (!evento_id || !usuario_id || !cantidad_boletos || !metodo_pago || total === undefined || total === null || !tipo_entrada_id) {
       return NextResponse.json(
         { error: 'Todos los campos son requeridos, incluyendo tipo_entrada_id' },
         { status: 400 }
@@ -191,7 +194,7 @@ export async function POST(req: Request) {
           cantidad_boletos: parseInt(cantidad_boletos),
           precio_total: parseFloat(total),
           metodo_pago,
-          estado_reserva: 'pendiente',
+          estado_reserva: parseFloat(total) === 0 ? 'confirmada' : 'pendiente',
           fecha_reserva: new Date(),
           qr_data: reservaId,
           qr_hash: hash,
@@ -219,7 +222,7 @@ export async function POST(req: Request) {
           reserva_id: reserva.id,
           monto: parseFloat(total),
           metodo_pago,
-          estado_transaccion: 'pendiente', // Cambiar a 'completada' después de confirmar pago
+          estado_transaccion: parseFloat(total) === 0 ? 'completada' : 'pendiente', // Cambiar a 'completada' después de confirmar pago
           referencia_externa: `PAY-${numeroOrden}`,
         },
       });
