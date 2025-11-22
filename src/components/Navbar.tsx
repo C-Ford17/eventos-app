@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Menu, X, User, LogOut, LayoutDashboard, Compass, Home, Bell, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, User, LogOut, LayoutDashboard, Compass, Home, Bell, LogIn, UserPlus, MessageCircle } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import FavoritesButton from './FavoritesButton';
 
@@ -11,6 +11,7 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -29,6 +30,35 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [pathname]);
+
+  // Polling para mensajes de chat (Usuario normal)
+  useEffect(() => {
+    if (!user || user.tipo_usuario === 'admin') return;
+
+    const checkMessages = async () => {
+      try {
+        const res = await fetch(`/api/chat/status?usuario_id=${user.id}`);
+        const data = await res.json();
+
+        if (data.success && data.hasMessages && data.esRespuesta) {
+          const lastRead = localStorage.getItem('lastReadChatTime');
+          const messageTime = new Date(data.lastMessageAt).getTime();
+
+          if (!lastRead || messageTime > parseInt(lastRead)) {
+            setHasUnreadMessages(true);
+          } else {
+            setHasUnreadMessages(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking messages:', error);
+      }
+    };
+
+    checkMessages();
+    const interval = setInterval(checkMessages, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -137,6 +167,24 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center gap-2 sm:gap-3">
                 {user.tipo_usuario === 'asistente' && <FavoritesButton userId={user.id} />}
+
+                {/* Chat Notification for non-admins */}
+                {user.tipo_usuario !== 'admin' && (
+                  <Link
+                    href="/dashboard/ayuda"
+                    className="relative p-2 text-gray-300 hover:text-white transition-colors"
+                    onClick={() => {
+                      localStorage.setItem('lastReadChatTime', Date.now().toString());
+                      setHasUnreadMessages(false);
+                    }}
+                  >
+                    <MessageCircle size={20} />
+                    {hasUnreadMessages && (
+                      <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0a0a0a]"></span>
+                    )}
+                  </Link>
+                )}
+
                 <NotificationBell userId={user.id} />
 
                 <div className="relative">

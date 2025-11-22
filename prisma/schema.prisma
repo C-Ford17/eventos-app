@@ -39,7 +39,11 @@ model Usuario {
   favoritos           Favorito[]         @relation("UsuarioFavoritos")
   eventoStaffId       String? // ID del evento asignado (Solo para Staff)
   eventoStaff         Evento?            @relation("StaffEvento", fields: [eventoStaffId], references: [id])
-
+  
+  // Chatbot
+  conversacionesIniciadas Conversacion[] @relation("ConversacionUsuario")
+  conversacionesAtendidas Conversacion[] @relation("ConversacionAdmin")
+  mensajesEnviados        Mensaje[]      @relation("MensajesEnviados")
 
   @@map("usuarios")
 }
@@ -288,4 +292,38 @@ model Favorito {
 
   @@unique([usuario_id, evento_id])
   @@map("favoritos")
+}
+
+// CHATBOT - Conversaciones y Mensajes
+model Conversacion {
+  id              String    @id @default(uuid())
+  usuario_id      String
+  admin_id        String?
+  estado          String    @default("bot") // 'bot', 'humano', 'cerrada'
+  asunto          String?
+  contexto        Json?     // Información del usuario: rol, eventos, etc.
+  requiere_humano Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  usuario  Usuario   @relation("ConversacionUsuario", fields: [usuario_id], references: [id], onDelete: Cascade)
+  admin    Usuario?  @relation("ConversacionAdmin", fields: [admin_id], references: [id], onDelete: SetNull)
+  mensajes Mensaje[]
+
+  @@map("conversaciones")
+}
+
+model Mensaje {
+  id              String       @id @default(uuid())
+  conversacion_id String
+  remitente_id    String
+  contenido       String       @db.Text
+  es_bot          Boolean      @default(false)
+  leido           Boolean      @default(false)
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  conversacion Conversacion @relation(fields: [conversacion_id], references: [id], onDelete: Cascade)
+  remitente    Usuario      @relation("MensajesEnviados", fields: [remitente_id], references: [id], onDelete: Cascade)
+
+  @@map("mensajes")
 }

@@ -18,9 +18,12 @@ import {
     ChevronRight,
     Settings,
     ShieldAlert,
-    Flag
+    Flag,
+    MessageCircle,
+    HelpCircle
 } from 'lucide-react';
 import ReportModal from '@/components/ReportModal';
+
 let toggleMobileSidebarFn: (() => void) | null = null;
 export function toggleMobileSidebar() {
     if (toggleMobileSidebarFn) {
@@ -36,19 +39,44 @@ export default function Sidebar() {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [tooltipPos, setTooltipPos] = useState(0);
     const [showBugModal, setShowBugModal] = useState(false);
+    const [pendingChats, setPendingChats] = useState(0);
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
         if (userStr) {
-            setUser(JSON.parse(userStr));
+            const userData = JSON.parse(userStr);
+            setUser(userData);
         }
     }, []);
+
     useEffect(() => {
         toggleMobileSidebarFn = () => setIsMobileMenuOpen(prev => !prev);
         return () => {
             toggleMobileSidebarFn = null;
         }
     }, []);
+
+    // Polling para notificaciones de chat (Solo Admin)
+    useEffect(() => {
+        if (!user || user.tipo_usuario !== 'admin') return;
+
+        const checkChatStatus = async () => {
+            try {
+                const res = await fetch('/api/admin/chat/status');
+                const data = await res.json();
+                if (data.success) {
+                    setPendingChats(data.pendingCount);
+                }
+            } catch (error) {
+                console.error('Error checking chat status:', error);
+            }
+        };
+
+        checkChatStatus(); // Initial check
+        const interval = setInterval(checkChatStatus, 30000); // Check every 30s
+
+        return () => clearInterval(interval);
+    }, [user]);
 
     const getSidebarOptions = () => {
         if (!user) return [];
@@ -62,6 +90,7 @@ export default function Sidebar() {
                 return [
                     ...commonOptions,
                     { label: 'Mis Reservas', href: '/dashboard/asistente/reservas', icon: Ticket },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'organizador':
                 return [
@@ -71,6 +100,7 @@ export default function Sidebar() {
                     { label: 'Analíticas', href: '/dashboard/organizador/analiticas', icon: BarChart3 },
                     { label: 'Proveedores', href: '/dashboard/organizador/proveedores', icon: Users },
                     { label: 'Servicios', href: '/dashboard/organizador/servicios-contratados', icon: Briefcase },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'proveedor':
                 return [
@@ -79,6 +109,7 @@ export default function Sidebar() {
                     { label: 'Agregar Servicio', href: '/dashboard/proveedor/servicios/crear', icon: PlusCircle },
                     { label: 'Solicitudes', href: '/dashboard/proveedor/solicitudes', icon: FileText },
                     { label: 'Historial', href: '/dashboard/proveedor/historial', icon: History },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'staff':
                 return [
@@ -86,6 +117,7 @@ export default function Sidebar() {
                     { label: 'Escanear', href: '/dashboard/staff/escanear', icon: ScanLine },
                     { label: 'Asistentes', href: '/dashboard/staff/asistentes', icon: Users },
                     { label: 'Reportes', href: '/dashboard/staff/reportes', icon: FileText },
+                    { label: 'Ayuda', href: '/dashboard/ayuda', icon: HelpCircle },
                 ];
             case 'admin':
                 return [
@@ -93,6 +125,12 @@ export default function Sidebar() {
                     { label: 'Usuarios', href: '/dashboard/admin/usuarios', icon: Users },
                     { label: 'Eventos', href: '/dashboard/admin/eventos', icon: Calendar },
                     { label: 'Servicios', href: '/dashboard/admin/servicios', icon: Briefcase },
+                    {
+                        label: 'Chat',
+                        href: '/dashboard/admin/chat',
+                        icon: MessageCircle,
+                        badge: pendingChats > 0 ? pendingChats : undefined
+                    },
                     { label: 'Reportes', href: '/dashboard/admin/reportes', icon: FileText },
                     { label: 'Auditoría', href: '/dashboard/admin/auditoria', icon: ShieldAlert },
                 ];
@@ -162,6 +200,8 @@ export default function Sidebar() {
                         {sidebarOptions.map((option, index) => {
                             const Icon = option.icon;
                             const isActive = pathname === option.href;
+                            // @ts-ignore
+                            const badgeCount = option.badge;
 
                             return (
                                 <Link
@@ -181,10 +221,24 @@ export default function Sidebar() {
                                         : 'text-gray-400 hover:bg-white/5 hover:text-white'
                                         } ${isCollapsed ? 'justify-center' : ''}`}
                                 >
-                                    <Icon size={20} className={isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'} />
+                                    <div className="relative">
+                                        <Icon size={20} className={isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'} />
+                                        {badgeCount && isCollapsed && (
+                                            <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border border-[#0a0a0a]">
+                                                {badgeCount}
+                                            </span>
+                                        )}
+                                    </div>
 
                                     {!isCollapsed && (
-                                        <span className="font-medium text-sm">{option.label}</span>
+                                        <div className="flex-1 flex items-center justify-between">
+                                            <span className="font-medium text-sm">{option.label}</span>
+                                            {badgeCount && (
+                                                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                                    {badgeCount}
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
 
                                     {/* Tooltip for collapsed state */}
@@ -194,6 +248,7 @@ export default function Sidebar() {
                                             style={{ top: tooltipPos + 10 }}
                                         >
                                             {option.label}
+                                            {badgeCount && ` (${badgeCount})`}
                                             {/* Arrow */}
                                             <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-gray-800" />
                                         </div>
