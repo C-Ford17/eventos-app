@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Package, DollarSign, AlignLeft, ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { Package, DollarSign, AlignLeft, ArrowLeft, Save, Trash2, Upload } from 'lucide-react';
 
 export default function EditarServicioPage() {
     const router = useRouter();
@@ -14,6 +14,8 @@ export default function EditarServicioPage() {
     const [precioBase, setPrecioBase] = useState('');
     const [categoria, setCategoria] = useState('');
     const [disponible, setDisponible] = useState(true);
+    const [imagenUrl, setImagenUrl] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const categorias = [
         'Catering',
@@ -42,7 +44,8 @@ export default function EditarServicioPage() {
                     setDescripcion(s.descripcion);
                     setPrecioBase(s.precio_base.toString());
                     setCategoria(s.categoria);
-                    setDisponible(s.disponible);
+                    setDisponible(s.disponibilidad);
+                    setImagenUrl(s.imagen_url);
                 } else {
                     alert('Error al cargar servicio');
                     router.push('/dashboard/proveedor/servicios');
@@ -51,6 +54,34 @@ export default function EditarServicioPage() {
             .catch(err => console.error('Error:', err))
             .finally(() => setLoading(false));
     }, [params.id, router]);
+
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                setImagenUrl(data.url);
+            } else {
+                throw new Error(data.error || 'Error al subir imagen');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            alert('Error al subir la imagen');
+        } finally {
+            setUploadingImage(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,6 +100,7 @@ export default function EditarServicioPage() {
                     categoria,
                     disponibilidad: disponible,
                     proveedor_id: user.id,
+                    imagen_url: imagenUrl,
                 }),
             });
 
@@ -115,6 +147,55 @@ export default function EditarServicioPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Imagen del Servicio */}
+                <div className="bg-[#1a1a1a]/60 border border-white/10 p-8 rounded-2xl">
+                    <label className="text-sm font-medium text-gray-300 flex items-center gap-2 mb-4">
+                        <Upload size={16} className="text-blue-400" />
+                        Imagen del Servicio (Opcional)
+                    </label>
+                    {imagenUrl ? (
+                        <div className="relative w-full h-64 rounded-2xl overflow-hidden group border border-white/10">
+                            <img
+                                src={imagenUrl}
+                                alt="Preview"
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setImagenUrl(null)}
+                                    className="p-3 bg-red-500/80 hover:bg-red-600 text-white rounded-full backdrop-blur-sm transition-all transform hover:scale-110"
+                                >
+                                    <Trash2 size={24} />
+                                </button>
+                            </div>
+                            {uploadingImage && (
+                                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
+                                    <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                                    <p className="text-white font-medium">Subiendo imagen...</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-white/10 rounded-2xl cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                    <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                </div>
+                                <p className="text-lg font-medium text-white mb-2 text-center">Sube una imagen</p>
+                                <p className="text-gray-500 text-sm">Soporta JPG, PNG, WEBP (Máx. 5MB)</p>
+                            </div>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageSelect}
+                                disabled={uploadingImage}
+                                className="hidden"
+                            />
+                        </label>
+                    )}
+                </div>
+
                 <div className="bg-[#1a1a1a]/60 border border-white/10 p-8 rounded-2xl">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div className="space-y-2">

@@ -54,21 +54,6 @@ export default function DetalleEventoPage() {
     }
   }, [user, eventoId]);
 
-  const handleComprar = () => {
-    if (!user) {
-      localStorage.setItem('redirectAfterLogin', `/eventos/${eventoId}`);
-      router.push('/login');
-      return;
-    }
-
-    if (user.tipo_usuario === 'organizador' || user.tipo_usuario === 'proveedor') {
-      alert('Solo los asistentes pueden comprar boletos. Tu cuenta es de tipo: ' + user.tipo_usuario);
-      return;
-    }
-
-    router.push(`/eventos/${eventoId}/comprar`);
-  };
-
   const handleToggleFavorite = async () => {
     if (!user) {
       router.push('/login');
@@ -92,6 +77,69 @@ export default function DetalleEventoPage() {
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
+  };
+
+  const handleParticipar = async () => {
+    if (!evento.tiposEntrada || evento.tiposEntrada.length === 0) {
+      alert('No hay tipos de entrada disponibles para este evento.');
+      return;
+    }
+
+    const tipoEntrada = evento.tiposEntrada[0];
+
+    if (confirm(`¿Quieres participar en ${evento.nombre}? Es gratis.`)) {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/reservas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            evento_id: evento.id,
+            usuario_id: user.id,
+            cantidad_boletos: 1,
+            metodo_pago: 'gratis',
+            subtotal: 0,
+            cargo_servicio: 0,
+            total: 0,
+            tipo_entrada_id: tipoEntrada.id
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('¡Te has registrado exitosamente!');
+          router.push('/dashboard/asistente/reservas');
+        } else {
+          throw new Error(data.error || 'Error al registrarse');
+        }
+      } catch (error: any) {
+        console.error('Error al participar:', error);
+        alert(error.message || 'Error al registrarse en el evento');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleComprar = () => {
+    if (!user) {
+      localStorage.setItem('redirectAfterLogin', `/eventos/${eventoId}`);
+      router.push('/login');
+      return;
+    }
+
+    if (user.tipo_usuario === 'organizador' || user.tipo_usuario === 'proveedor') {
+      alert('Solo los asistentes pueden comprar boletos. Tu cuenta es de tipo: ' + user.tipo_usuario);
+      return;
+    }
+
+    if (evento.precio_base === 0) {
+      handleParticipar();
+      return;
+    }
+
+    router.push(`/eventos/${eventoId}/comprar`);
   };
 
   if (loading) {
@@ -365,7 +413,7 @@ export default function DetalleEventoPage() {
                 className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 mb-4"
               >
                 <Ticket size={20} />
-                {disponibilidad === 0 ? 'Agotado' : 'Comprar Boletos'}
+                {disponibilidad === 0 ? 'Agotado' : (evento.precio_base === 0 ? 'Participar' : 'Comprar Boletos')}
               </button>
 
               {!user && (

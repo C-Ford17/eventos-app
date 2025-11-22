@@ -102,6 +102,8 @@ export async function PUT(
       aforo_max,
       estado,
       organizador_id,
+      imagen_url,
+      tiposEntrada, // Array de tipos de entrada a actualizar
     } = body;
 
     // Verifica que el evento existe
@@ -125,17 +127,57 @@ export async function PUT(
     }
 
     // Actualiza el evento
-    const eventoActualizado = await prisma.evento.update({
+    // Iniciar transacción para actualizar evento y tipos de entrada
+    const eventoActualizado = await prisma.$transaction(async (tx) => {
+      // 1. Actualizar datos básicos del evento
+      const evento = await tx.evento.update({
+        where: { id },
+        data: {
+          ...(nombre && { nombre }),
+          ...(descripcion && { descripcion }),
+          ...(fecha_inicio && { fecha_inicio: new Date(fecha_inicio) }),
+          ...(fecha_fin && { fecha_fin: new Date(fecha_fin) }),
+          ...(ubicacion && { ubicacion }),
+          ...(aforo_max && { aforo_max: parseInt(aforo_max) }),
+          ...(estado && { estado }),
+          ...(imagen_url !== undefined && { imagen_url }), // Permitir null
+        },
+      });
+
+      // 2. Actualizar tipos de entrada si se proporcionan
+      if (tiposEntrada && Array.isArray(tiposEntrada)) {
+        for (const tipo of tiposEntrada) {
+          if (tipo.id) {
+            // Actualizar existente
+            await tx.tipoEntrada.update({
+              where: { id: tipo.id },
+              data: {
+                precio: tipo.precio,
+                cantidad_total: parseInt(tipo.cantidad_total),
+                nombre: tipo.nombre, // Opcional: permitir cambiar nombre
+              },
+            });
+          } else {
+            // Crear nuevo (si se desea permitir agregar tipos en edición)
+            await tx.tipoEntrada.create({
+              data: {
+                evento_id: id,
+                nombre: tipo.nombre,
+                precio: tipo.precio,
+                cantidad_total: parseInt(tipo.cantidad_total),
+                disponible: true,
+              },
+            });
+          }
+        }
+      }
+
+      return evento;
+    });
+
+    // Obtener evento actualizado con relaciones para devolver
+    const eventoFinal = await prisma.evento.findUnique({
       where: { id },
-      data: {
-        ...(nombre && { nombre }),
-        ...(descripcion && { descripcion }),
-        ...(fecha_inicio && { fecha_inicio: new Date(fecha_inicio) }),
-        ...(fecha_fin && { fecha_fin: new Date(fecha_fin) }),
-        ...(ubicacion && { ubicacion }),
-        ...(aforo_max && { aforo_max: parseInt(aforo_max) }),
-        ...(estado && { estado }),
-      },
       include: {
         categoria: true,
         organizador: {
@@ -145,13 +187,14 @@ export async function PUT(
             email: true,
           },
         },
+        tiposEntrada: true,
       },
     });
 
     return NextResponse.json({
       success: true,
       message: 'Evento actualizado exitosamente',
-      evento: eventoActualizado,
+      evento: eventoFinal,
     });
   } catch (error: any) {
     console.error('Error actualizando evento:', error);

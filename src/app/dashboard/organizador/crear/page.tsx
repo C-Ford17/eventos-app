@@ -23,7 +23,7 @@ export default function CrearEventoPage() {
   const [imagenPreview, setImagenPreview] = useState('');
 
   const [tiposEntrada, setTiposEntrada] = useState([
-    { nombre: 'General', precio: '' },
+    { nombre: 'General', precio: '', cantidad: '' },
   ]);
 
   useEffect(() => {
@@ -128,6 +128,7 @@ export default function CrearEventoPage() {
               evento_id: result.evento.id,
               nombre: tipo.nombre,
               precio: parseFloat(tipo.precio),
+              cantidad_total: tipo.cantidad ? parseInt(tipo.cantidad) : 100,
             }),
           });
         }
@@ -144,7 +145,7 @@ export default function CrearEventoPage() {
   };
 
   const agregarTipoEntrada = () => {
-    setTiposEntrada([...tiposEntrada, { nombre: '', precio: '' }]);
+    setTiposEntrada([...tiposEntrada, { nombre: '', precio: '', cantidad: '' }]);
   };
 
   const eliminarTipoEntrada = (index: number) => {
@@ -369,9 +370,41 @@ export default function CrearEventoPage() {
                       placeholder="0.00"
                       min="0"
                       step="0.01"
-                      className="w-full pl-8 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                      className={`w-full pl-8 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all ${tipo.precio === '0' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={tipo.precio === '0'}
                     />
                   </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      id={`gratis-${index}`}
+                      checked={tipo.precio === '0'}
+                      onChange={(e) => {
+                        const nuevos = [...tiposEntrada];
+                        nuevos[index].precio = e.target.checked ? '0' : '';
+                        setTiposEntrada(nuevos);
+                      }}
+                      className="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-blue-500 bg-black/20"
+                    />
+                    <label htmlFor={`gratis-${index}`} className="text-sm text-gray-400 cursor-pointer select-none">
+                      Es gratis
+                    </label>
+                  </div>
+                </div>
+                <div className="w-full md:w-32 space-y-2">
+                  <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider">Cantidad</label>
+                  <input
+                    type="number"
+                    value={tipo.cantidad}
+                    onChange={(e) => {
+                      const nuevos = [...tiposEntrada];
+                      nuevos[index].cantidad = e.target.value;
+                      setTiposEntrada(nuevos);
+                    }}
+                    placeholder="100"
+                    min="1"
+                    className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  />
                 </div>
                 <div className="self-end md:pt-8">
                   <button

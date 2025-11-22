@@ -11,6 +11,7 @@ interface Servicio {
   descripcion: string;
   precio: number;
   disponible: boolean;
+  imagen_url?: string | null;
 }
 
 interface Proveedor {
@@ -247,6 +248,16 @@ export default function ProveedoresPage() {
                   className="group bg-black/20 hover:bg-black/40 border border-white/5 hover:border-blue-500/30 rounded-xl p-4 transition-all flex flex-col justify-between h-full"
                 >
                   <div>
+                    {/* Service Image */}
+                    {servicio.imagen_url && (
+                      <div className="mb-3 rounded-lg overflow-hidden h-32 bg-black/40">
+                        <img
+                          src={servicio.imagen_url}
+                          alt={servicio.nombre}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     <div className="flex justify-between items-start mb-3">
                       <h4 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
                         {servicio.nombre}

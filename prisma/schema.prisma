@@ -265,6 +265,7 @@ model TipoEntrada {
   evento_id  String
   nombre     String // Ej: "Degustación Premium", "General"
   precio     Decimal  @db.Decimal(10, 2)
+  cantidad_total Int      @default(100) // Cantidad total de entradas de este tipo
   disponible Boolean  @default(true)
   createdAt  DateTime @default(now())
 

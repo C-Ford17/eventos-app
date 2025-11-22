@@ -49,6 +49,7 @@ export async function GET(request: Request) {
         precio: servicio.precio_base,
         disponible: servicio.disponibilidad,
         categoria: servicio.categoria,
+        imagen_url: servicio.imagen_url,
       })),
       totalServicios: proveedor.productosServicios.length,
       serviciosDisponibles: proveedor.productosServicios.filter(s => s.disponibilidad).length,

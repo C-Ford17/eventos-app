@@ -21,6 +21,7 @@ export async function POST(request: Request) {
         evento_id,
         nombre,
         precio,
+        cantidad_total: body.cantidad_total ? parseInt(body.cantidad_total) : 100,
         disponible: true,
       },
     });
