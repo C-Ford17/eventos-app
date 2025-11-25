@@ -357,19 +357,16 @@ export default function ProveedoresPage() {
                   <Calendar size={16} />
                   Selecciona el evento *
                 </label>
-                <select
+                <CustomDropdown
+                  options={eventos.map(evento => ({
+                    value: evento.id,
+                    label: `${evento.nombre} - ${new Date(evento.fecha_inicio).toLocaleDateString('es-ES')}`
+                  }))}
                   value={eventoSeleccionado}
-                  onChange={(e) => setEventoSeleccionado(e.target.value)}
-                  className="w-full px-4 py-3 bg-black/20 text-white rounded-xl border border-white/10 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all appearance-none"
-                  required
-                >
-                  <option value="" className="bg-neutral-900">-- Selecciona un evento --</option>
-                  {eventos.map(evento => (
-                    <option key={evento.id} value={evento.id} className="bg-neutral-900">
-                      {evento.nombre} - {new Date(evento.fecha_inicio).toLocaleDateString('es-ES')}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setEventoSeleccionado(value)}
+                  placeholder="-- Selecciona un evento --"
+                  className="w-full"
+                />
                 {eventos.length === 0 && (
                   <p className="text-yellow-400 text-xs mt-2 flex items-center gap-1">
                     ⚠️ No tienes eventos creados. <a href="/dashboard/organizador/crear" className="underline hover:text-yellow-300">Crear evento</a>

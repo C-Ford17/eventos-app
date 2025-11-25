@@ -19,6 +19,7 @@ export async function GET(req: Request) {
       where: {
         ...(id && { id }), // Filtrar por ID si existe
         ...(categoria && { categoria_id: categoria }),
+        ...(organizador_id && { organizador_id }), // ✅ Filtrar por organizador si existe
         estado,
         bloqueado: false, // ✅ Excluir eventos bloqueados
       },
